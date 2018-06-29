@@ -63,12 +63,13 @@ class App extends Component {
   }
 
   render() {
-    return <div>
-      <button onClick={this.createNewDocument.bind(this)}>Create new document</button>
-      <input onKeyPress={this.onKeyPress.bind(this)} type='text' placeholder='Open document' />
+    return <main role='main'>
+      <nav>
+        <button onClick={this.createNewDocument.bind(this)}>Create new document</button>
+        <input onKeyPress={this.onKeyPress.bind(this)} type='text' placeholder='Open document' />
+      </nav>
       {this.state.doc && <Editor doc={this.state.doc} onEdit={this.onEdit.bind(this)} />}
-      {this.state.doc && <h1>{hm.getId(this.state.doc)}</h1>}
-    </div>
+    </main>
   }
 }
 
@@ -79,6 +80,10 @@ class Editor extends Component {
       value: props.doc.text.join('')
     };
     this.textarea = React.createRef();
+  }
+
+  componentDidMount() {
+    this.textarea.current.focus();
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -145,16 +150,19 @@ class Editor extends Component {
 
   render() {
     return (
-      <textarea
-        ref={this.textarea}
-        value={this.state.value}
-        onSelect={this.onSelect.bind(this)}
-        onChange={this.onChange.bind(this)}></textarea>
+      <div id='editor'>
+        <textarea
+          ref={this.textarea}
+          value={this.state.value}
+          onSelect={this.onSelect.bind(this)}
+          onChange={this.onChange.bind(this)}></textarea>
+        <div className='doc-id'>Copy to share: <span>{hm.getId(this.props.doc)}</span></div>
+      </div>
     );
   }
 }
 
-let hm = new Hypermerge({
+const hm = new Hypermerge({
   path: ram
 });
 
