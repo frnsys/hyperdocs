@@ -16,5 +16,4 @@ p2p collaborative document editing, built on [`hypermerge`](https://github.com/a
 - Count of people accessing documents
 - Track cursors and selections
 - Markdown preview
-- Give documents names
 - List documents
