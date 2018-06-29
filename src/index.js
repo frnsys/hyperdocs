@@ -20,6 +20,11 @@ class InlineEditable extends Component {
     }
   }
 
+  onBlur(ev) {
+    this.props.onEdit(ev.target.value);
+    this.setState({ editing: false });
+  }
+
   onClick() {
     this.setState({ editing: true });
   }
@@ -37,6 +42,7 @@ class InlineEditable extends Component {
         className={this.props.className}
         defaultValue={this.props.value}
         onKeyPress={this.onKeyPress.bind(this)}
+        onBlur={this.onBlur.bind(this)}
         ref={this.input} />
     } else {
       return <div className={this.props.className} onClick={this.onClick.bind(this)}>{this.props.value}</div>;
