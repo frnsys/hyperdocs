@@ -8,7 +8,7 @@ class InlineEditable extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      editing: false,
+      editing: false
     };
     this.input = React.createRef();
   }
@@ -54,17 +54,18 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      doc: null
+      doc: null,
+      peers: []
     };
   }
 
   componentDidMount() {
     hm.on('peer:joined', (actorId, peer) => {
-      // console.log('peer joined');
+      this.setState({ peers: this.uniquePeers(this.state.doc) });
     });
 
     hm.on('peer:left', (actorId, peer) => {
-      // console.log('peer left');
+      this.setState({ peers: this.uniquePeers(this.state.doc) });
     });
 
     hm.on('document:updated', (docId, doc, prevDoc) => {
@@ -89,7 +90,7 @@ class App extends Component {
       ev.target.value = '';
       hm.open(docId);
       hm.once('document:ready', (docId, doc) => {
-        this.setState({ doc: doc });
+        this.setState({ doc: doc, peers: this.uniquePeers(doc) });
       });
     }
   }
@@ -116,6 +117,14 @@ class App extends Component {
     this.setState({ doc });
   }
 
+  uniquePeers(doc) {
+    if (doc) {
+      let peers = hm.feeds[hm.getId(doc)].peers;
+      return [...new Set(peers.filter((p) => p.remoteId).map(p => p.remoteId.toString('hex')))];
+    }
+    return [];
+  }
+
   render() {
     return <main role='main'>
       <nav>
@@ -123,6 +132,7 @@ class App extends Component {
         <input onKeyPress={this.onKeyPress.bind(this)} type='text' placeholder='Open document' />
       </nav>
       {this.state.doc && <InlineEditable className='doc-title' value={this.state.doc.title} onEdit={this.onEditTitle.bind(this)} />}
+      {this.state.doc && <div>{this.state.peers.length} peers</div>}
       {this.state.doc && <Editor doc={this.state.doc} onEdit={this.onEdit.bind(this)} />}
     </main>
   }
