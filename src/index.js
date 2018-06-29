@@ -4,6 +4,46 @@ import Hypermerge from 'hypermerge';
 import React, {Component} from 'react';
 import ram from 'random-access-memory';
 
+class InlineEditable extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      editing: false,
+    };
+    this.input = React.createRef();
+  }
+
+  onKeyPress(ev) {
+    if (ev.key === 'Enter') {
+      this.props.onEdit(ev.target.value);
+      this.setState({ editing: false });
+    }
+  }
+
+  onClick() {
+    this.setState({ editing: true });
+  }
+
+  componentDidUpdate() {
+    if (this.input.current) {
+      this.input.current.focus();
+    }
+  }
+
+  render() {
+    if (this.state.editing) {
+      return <input
+        type='text'
+        className={this.props.className}
+        defaultValue={this.props.value}
+        onKeyPress={this.onKeyPress.bind(this)}
+        ref={this.input} />
+    } else {
+      return <div className={this.props.className} onClick={this.onClick.bind(this)}>{this.props.value}</div>;
+    }
+  }
+}
+
 class App extends Component {
   constructor(props) {
     super(props);
@@ -31,6 +71,7 @@ class App extends Component {
     hm.once('document:ready', (docId, doc) => {
       let changedDoc = hm.change(doc, (changeDoc) => {
         changeDoc.text = new Automerge.Text();
+        changeDoc.title = 'Untitled';
       })
       this.setState({ doc: changedDoc });
     });
@@ -62,12 +103,20 @@ class App extends Component {
     this.setState({ doc });
   }
 
+  onEditTitle(title) {
+    let doc = hm.change(this.state.doc, (changeDoc) => {
+      changeDoc.title = title;
+    });
+    this.setState({ doc });
+  }
+
   render() {
     return <main role='main'>
       <nav>
         <button onClick={this.createNewDocument.bind(this)}>Create new document</button>
         <input onKeyPress={this.onKeyPress.bind(this)} type='text' placeholder='Open document' />
       </nav>
+      {this.state.doc && <InlineEditable className='doc-title' value={this.state.doc.title} onEdit={this.onEditTitle.bind(this)} />}
       {this.state.doc && <Editor doc={this.state.doc} onEdit={this.onEdit.bind(this)} />}
     </main>
   }
