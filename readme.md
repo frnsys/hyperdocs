@@ -1,3 +1,5 @@
+![](demo.gif)
+
 EXPERIMENTAL
 
 p2p collaborative document editing, built on [`hypermerge`](https://github.com/automerge/hypermerge).
