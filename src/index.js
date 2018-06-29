@@ -3,6 +3,16 @@ import Automerge from 'automerge';
 import Hypermerge from 'hypermerge';
 import React, {Component} from 'react';
 import ram from 'random-access-memory';
+import getCaretCoordinates from 'textarea-caret';
+
+const colors = [
+  '#1313ef',
+  '#ef1321',
+  '#24b554',
+  '#851fd3',
+  '#0eaff4',
+  '#edc112'
+];
 
 class InlineEditable extends Component {
   constructor(props) {
@@ -65,7 +75,16 @@ class App extends Component {
     });
 
     hm.on('peer:left', (actorId, peer) => {
-      this.setState({ peers: this.uniquePeers(this.state.doc) });
+      if (this.state.doc) {
+        this.setState({ peers: this.uniquePeers(this.state.doc) });
+        // TODO not sure how to recover same id we use for the cursors for deletion
+        // the following is not the same id as hm.swarm.id used below
+        // let id = peer.remoteId.toString('hex');
+        // let changedDoc = hm.change(this.state.doc, (changeDoc) => {
+        //   delete changeDoc.peers[id];
+        // })
+        // this.setState({ doc: changedDoc });
+      }
     });
 
     hm.on('document:updated', (docId, doc, prevDoc) => {
@@ -79,6 +98,7 @@ class App extends Component {
       let changedDoc = hm.change(doc, (changeDoc) => {
         changeDoc.text = new Automerge.Text();
         changeDoc.title = 'Untitled';
+        changeDoc.peers = {};
       })
       this.setState({ doc: changedDoc });
     });
@@ -117,6 +137,16 @@ class App extends Component {
     this.setState({ doc });
   }
 
+  onEditSelect(caretPos) {
+    let doc = hm.change(this.state.doc, (changeDoc) => {
+      // TODO not sure if this is the best id to use,
+      // since it doesn't seem like peers have access to it
+      let id = hm.swarm.id.toString('hex');
+      changeDoc.peers[id] = caretPos;
+    });
+    this.setState({ doc });
+  }
+
   uniquePeers(doc) {
     if (doc) {
       let peers = hm.feeds[hm.getId(doc)].peers;
@@ -133,7 +163,7 @@ class App extends Component {
       </nav>
       {this.state.doc && <InlineEditable className='doc-title' value={this.state.doc.title} onEdit={this.onEditTitle.bind(this)} />}
       {this.state.doc && <div>{this.state.peers.length} peers</div>}
-      {this.state.doc && <Editor doc={this.state.doc} onEdit={this.onEdit.bind(this)} />}
+      {this.state.doc && <Editor doc={this.state.doc} onEdit={this.onEdit.bind(this)} onSelect={this.onEditSelect.bind(this)} />}
     </main>
   }
 }
@@ -163,6 +193,10 @@ class Editor extends Component {
       selectionStart: textarea.selectionStart,
       selectionEnd: textarea.selectionEnd
     });
+
+    // update caret position
+    let caretPos = getCaretCoordinates(textarea, textarea.selectionStart);
+    this.props.onSelect(caretPos);
   }
 
   onChange(ev) {
@@ -216,6 +250,20 @@ class Editor extends Component {
   render() {
     return (
       <div id='editor'>
+        {Object.keys(this.props.doc.peers).map((id) => {
+          let pos = this.props.doc.peers[id];
+          let color = colors[parseInt(id, 16) % colors.length];
+          let style = {
+            position: 'absolute',
+            background: color,
+            left: pos.left
+          };
+          return (
+            <div key={id}>
+              <div className='peer-label' style={{top: pos.top, ...style}}>{id.substr(0, 6)}</div>
+              <div className='peer-cursor' style={{top: pos.top + pos.height, ...style}}></div>
+            </div>);
+        })}
         <textarea
           ref={this.textarea}
           value={this.state.value}

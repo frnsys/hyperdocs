@@ -43,6 +43,23 @@ textarea {
   margin: 1em 0;
 }
 
+#editor {
+  position: relative;
+}
+
+.peer-label {
+  font-size: 0.6em;
+  background: blue;
+  color: #fff;
+  padding: 0.2em 0.3em;
+  border-radius: 0.2em;
+}
+.peer-cursor {
+  width: 1px;
+  background: blue;
+  height: 1em;
+}
+
 .doc-id {
   font-size: 0.85em;
   text-align: center;
