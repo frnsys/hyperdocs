@@ -4,6 +4,7 @@ import Hypermerge from 'hypermerge';
 import React, {Component} from 'react';
 import ram from 'random-access-memory';
 import getCaretCoordinates from 'textarea-caret';
+import ReactMarkdown from 'react-markdown';
 
 const colors = [
   '#1313ef',
@@ -11,7 +12,8 @@ const colors = [
   '#24b554',
   '#851fd3',
   '#0eaff4',
-  '#edc112'
+  '#edc112',
+  '#7070ff'
 ];
 
 class InlineEditable extends Component {
@@ -172,9 +174,11 @@ class Editor extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      value: props.doc.text.join('')
+      value: props.doc.text.join(''),
+      preview: false
     };
     this.textarea = React.createRef();
+    this.preview = React.createRef();
   }
 
   componentDidMount() {
@@ -184,6 +188,13 @@ class Editor extends Component {
   componentDidUpdate(prevProps, prevState) {
     if (prevProps.doc !== this.props.doc) {
       this.setState({ value: this.props.doc.text.join('') });
+    }
+    if (prevState.preview !== this.state.preview) {
+      if (this.state.preview) {
+        this.preview.current.focus();
+      } else {
+        this.textarea.current.focus();
+      }
     }
   }
 
@@ -247,28 +258,53 @@ class Editor extends Component {
     this.setState({value: ev.target.value });
   }
 
+  onKeyPress(ev) {
+    if (ev.key === 'p' && ev.ctrlKey) {
+      this.setState({ preview: !this.state.preview });
+      ev.preventDefault();
+    }
+  }
+
   render() {
+    let main;
+    if (this.state.preview) {
+      main = <div
+        ref={this.preview}
+        className='doc-preview'
+        tabIndex='-1'
+        onKeyDown={this.onKeyPress.bind(this)}>
+        <ReactMarkdown source={this.state.value} />
+        <div className='doc-preview-label'>Preview</div>
+      </div>;
+    } else {
+      main = (
+        <div>
+          {Object.keys(this.props.doc.peers).map((id) => {
+            let pos = this.props.doc.peers[id];
+            let color = colors[parseInt(id, 16) % colors.length];
+            let style = {
+              position: 'absolute',
+              background: color,
+              left: pos.left
+            };
+            return (
+              <div key={id}>
+                <div className='peer-label' style={{top: pos.top, ...style}}>{id.substr(0, 6)}</div>
+                <div className='peer-cursor' style={{top: pos.top + pos.height, ...style}}></div>
+              </div>);
+          })}
+          <textarea
+            ref={this.textarea}
+            value={this.state.value}
+            onKeyDown={this.onKeyPress.bind(this)}
+            onSelect={this.onSelect.bind(this)}
+            onChange={this.onChange.bind(this)}></textarea>
+        </div>);
+    }
+
     return (
       <div id='editor'>
-        {Object.keys(this.props.doc.peers).map((id) => {
-          let pos = this.props.doc.peers[id];
-          let color = colors[parseInt(id, 16) % colors.length];
-          let style = {
-            position: 'absolute',
-            background: color,
-            left: pos.left
-          };
-          return (
-            <div key={id}>
-              <div className='peer-label' style={{top: pos.top, ...style}}>{id.substr(0, 6)}</div>
-              <div className='peer-cursor' style={{top: pos.top + pos.height, ...style}}></div>
-            </div>);
-        })}
-        <textarea
-          ref={this.textarea}
-          value={this.state.value}
-          onSelect={this.onSelect.bind(this)}
-          onChange={this.onChange.bind(this)}></textarea>
+        {main}
         <div className='doc-id'>Copy to share: <span>{hm.getId(this.props.doc)}</span></div>
       </div>
     );

@@ -42,6 +42,26 @@ textarea {
   padding: 1em;
   margin: 1em 0;
 }
+.doc-preview {
+  min-height: 50vh;
+  padding: 1em;
+  margin: 1em 0;
+  background: #fff;
+  position: relative;
+}
+.doc-preview img {
+  max-width: 100%;
+}
+.doc-preview-label {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #222;
+  color: #fff;
+  padding: 0.2em 0.3em;
+  font-size: 0.75em;
+  border-radius: 0 0 0 0.25em;
+}
 
 #editor {
   position: relative;
@@ -74,3 +94,4 @@ textarea {
   font-weight: bold;
   margin: 1em 0 0 0;
 }
+

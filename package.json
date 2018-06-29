@@ -34,6 +34,7 @@
     "hypermerge": "git://github.com/frnsys/hypermerge.git#fix-hypercore-crypto",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
+    "react-markdown": "^3.3.4",
     "textarea-caret": "github:component/textarea-caret-position"
   }
 }
