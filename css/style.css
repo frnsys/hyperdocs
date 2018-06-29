@@ -1,0 +1,115 @@
+html, body {
+  font-family: sans-serif;
+  background: pink;
+}
+
+.video {
+  position: relative;
+}
+.video video {
+  max-width: 100%;
+  display: block;
+}
+.video-draggable {
+  cursor: -webkit-grab;
+}
+
+.stage {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stage video {
+  background: blue;
+  box-shadow: 0px 0px 8px rgba(0,0,0,0.3);
+}
+
+.audiometer {
+  padding: 0.2em;
+  position: absolute;
+  bottom: 0;
+  right: 0.2em;
+}
+.audiometer-tick {
+  background: #31e054;
+  display: inline-block;
+  width: 2px;
+  height: 12px;
+  margin-right: 1px;
+  border-radius: 1px;
+}
+.audiometer-muted {
+  color: red;
+}
+
+.feed-id, button {
+  padding: 0.2em 0.3em;
+  border-radius: 0.2em;
+  border: none;
+  display: inline-block;
+  cursor: pointer;
+  background: #fff;
+}
+.feed-id:hover, button:hover {
+  background: #eee;
+}
+input[type=text] {
+  padding: 0.2em 0.3em;
+  border-radius: 0.2em;
+  border: none;
+}
+
+.peers .video {
+  position: fixed;
+  z-index: 10;
+  width: 200px;
+  top: 0;
+  box-shadow: 0px 0px 8px rgba(0,0,0,0.3);
+}
+
+.menu {
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 1em;
+  display: flex;
+  opacity: 0.1;
+  transition: all 0.2s;
+  justify-content: center;
+}
+.menu:hover {
+  opacity: 1;
+}
+.menu button, .menu input {
+  margin-right: 0.3em;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  background: rgba(0,0,255,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal {
+  background: #fff;
+  border-radius: 0.5em;
+  padding: 0 2em 2em 2em;
+}
+
+.toast-notification span {
+  color: #fff !important;
+  background: #222 !important;
+}

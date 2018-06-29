@@ -1,0 +1,38 @@
+{
+  "name": "hyperdocs",
+  "version": "0.0.0",
+  "description": "collaborative editing app",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron app.js",
+    "compile": "webpack --watch --progress"
+  },
+  "author": "Francis Tseng",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/frnsys/hyperdocs"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.0.0-beta.51",
+    "@babel/plugin-proposal-class-properties": "^7.0.0-beta.51",
+    "@babel/polyfill": "^7.0.0-beta.51",
+    "@babel/preset-env": "^7.0.0-beta.51",
+    "@babel/preset-react": "^7.0.0-beta.51",
+    "babel-loader": "^8.0.0-beta.0",
+    "css-loader": "^0.28.4",
+    "electron": "^2.0.3",
+    "extract-text-webpack-plugin": "^2.1.2",
+    "sass-loader": "^4.0.0",
+    "style-loader": "^0.18.2",
+    "url-loader": "^0.5.9",
+    "webpack": "^2.6.1"
+  },
+  "dependencies": {
+    "automerge": "^0.7.11",
+    "datland-swarm-defaults": "^1.0.2",
+    "hypermerge": "git://github.com/frnsys/hypermerge.git#fix-hypercore-crypto",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0"
+  }
+}
