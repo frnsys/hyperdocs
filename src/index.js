@@ -141,10 +141,7 @@ class App extends Component {
 
   onEditSelect(caretPos) {
     let doc = hm.change(this.state.doc, (changeDoc) => {
-      // TODO not sure if this is the best id to use,
-      // since it doesn't seem like peers have access to it
-      let id = hm.swarm.id.toString('hex');
-      changeDoc.peers[id] = caretPos;
+      changeDoc.peers[this.props.id] = caretPos;
     });
     this.setState({ doc });
   }
@@ -165,7 +162,7 @@ class App extends Component {
       </nav>
       {this.state.doc && <InlineEditable className='doc-title' value={this.state.doc.title} onEdit={this.onEditTitle.bind(this)} />}
       {this.state.doc && <div>{this.state.peers.length} peers</div>}
-      {this.state.doc && <Editor doc={this.state.doc} onEdit={this.onEdit.bind(this)} onSelect={this.onEditSelect.bind(this)} />}
+      {this.state.doc && <Editor id={this.props.id} doc={this.state.doc} onEdit={this.onEdit.bind(this)} onSelect={this.onEditSelect.bind(this)} />}
     </main>
   }
 }
@@ -280,6 +277,7 @@ class Editor extends Component {
       main = (
         <div>
           {Object.keys(this.props.doc.peers).map((id) => {
+            if (id === this.props.id) return;
             let pos = this.props.doc.peers[id];
             let color = colors[parseInt(id, 16) % colors.length];
             let style = {
@@ -317,6 +315,9 @@ const hm = new Hypermerge({
 
 hm.once('ready', (hm) => {
   hm.joinSwarm({utp: false}); // getting an error with utp?
+  // TODO not sure if this is the best id to use,
+  // since it doesn't seem like peers have access to it
+  let id = hm.swarm.id.toString('hex');
   let main = document.getElementById('main');
-  render(<App />, main);
+  render(<App id={id} />, main);
 });
