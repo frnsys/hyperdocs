@@ -113,3 +113,21 @@ textarea, .highlights {
   margin: 1em 0 0 0;
 }
 
+.app-name {
+  max-width: 8em;
+}
+
+.Select-control {
+  border-radius: 0.2em !important;
+}
+.Select-control, .Select-input {
+  height: auto !important;
+  border: none !important;
+}
+.Select-input > input {
+  padding: 0.25em 0 !important;
+  max-width: 10em !important;
+}
+.Select-placeholder {
+  line-height: 26px !important;
+}

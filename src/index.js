@@ -226,7 +226,7 @@ class App extends Component {
     return <main role='main'>
       <nav>
         <button onClick={this.createNewDocument.bind(this)}>Create new document</button>
-        <input placeholder='Name' type='text' className='doc-name' value={this.state.name} onChange={this.onEditName.bind(this)} />
+        <input placeholder='Name' type='text' className='app-name' value={this.state.name} onChange={this.onEditName.bind(this)} />
         <Creatable
           style={{width: '12em'}}
           placeholder='Open document'
