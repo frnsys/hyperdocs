@@ -10,3 +10,7 @@ p2p collaborative document editing, built on [`hypermerge`](https://github.com/a
 2. `npm install`
 3. `npm run compile`
 4. `npm start`
+
+# To figure out
+
+- What's the best way to share docs/invite people? Just rely on other messaging services?
