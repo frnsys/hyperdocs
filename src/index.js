@@ -8,8 +8,8 @@ import ReactMarkdown from 'react-markdown';
 import { Creatable } from 'react-select';
 import 'react-select/dist/react-select.css';
 
-const path = 'docs';
-// const path = ram;
+// const path = 'docs';
+const path = ram;
 
 const colors = [
   '#1313ef',
@@ -82,25 +82,34 @@ class App extends Component {
     this.state = {
       doc: null,
       peers: [],
-      docs: []
+      docs: [],
+      peerIds: {}
     };
   }
 
   componentDidMount() {
+    hm.on('peer:message', (actorId, peer, msg) => {
+      if (msg.type === 'hi') {
+        let peerIds = this.state.peerIds;
+        let id = peer.remoteId.toString('hex');
+        peerIds[id] = msg.id;
+      }
+    });
+
     hm.on('peer:joined', (actorId, peer) => {
+      hm._messagePeer(peer, {type: 'hi', id: this.props.id});
       this.setState({ peers: this.uniquePeers(this.state.doc) });
     });
 
     hm.on('peer:left', (actorId, peer) => {
       if (this.state.doc) {
         this.setState({ peers: this.uniquePeers(this.state.doc) });
-        // TODO not sure how to recover same id we use for the cursors for deletion
-        // the following is not the same id as hm.swarm.id used below
-        // let id = peer.remoteId.toString('hex');
-        // let changedDoc = hm.change(this.state.doc, (changeDoc) => {
-        //   delete changeDoc.peers[id];
-        // })
-        // this.setState({ doc: changedDoc });
+        let id = peer.remoteId.toString('hex');
+        id = this.state.peerIds[id];
+        let changedDoc = hm.change(this.state.doc, (changeDoc) => {
+          delete changeDoc.peers[id];
+        })
+        this.setState({ doc: changedDoc });
       }
     });
 
@@ -130,7 +139,7 @@ class App extends Component {
   updateDocs() {
     let docs = Object.keys(hm.docs).map((docId) => {
       return { value: docId, label: hm.docs[docId].title };
-    });
+    }).filter((d) => d.label);
     this.setState({ docs });
   }
 
