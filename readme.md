@@ -14,5 +14,4 @@ p2p collaborative document editing, built on [`hypermerge`](https://github.com/a
 # Nice-to-haves
 
 - Track selections
-- List documents
 - Peer identities?

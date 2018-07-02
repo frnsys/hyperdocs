@@ -35,6 +35,7 @@
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-markdown": "^3.3.4",
+    "react-select": "^1.2.1",
     "textarea-caret": "github:component/textarea-caret-position"
   }
 }

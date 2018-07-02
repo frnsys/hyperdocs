@@ -5,6 +5,11 @@ import React, {Component} from 'react';
 import ram from 'random-access-memory';
 import getCaretCoordinates from 'textarea-caret';
 import ReactMarkdown from 'react-markdown';
+import { Creatable } from 'react-select';
+import 'react-select/dist/react-select.css';
+
+const path = 'docs';
+// const path = ram;
 
 const colors = [
   '#1313ef',
@@ -15,6 +20,15 @@ const colors = [
   '#edc112',
   '#7070ff'
 ];
+
+
+function shrinkId(id) {
+  if (id.length <= 12) return id;
+  let front = id.substring(0, 6);
+  let end = id.substring(id.length - 6);
+  return `${front}...${end}`;
+}
+
 
 class InlineEditable extends Component {
   constructor(props) {
@@ -67,7 +81,8 @@ class App extends Component {
     super(props);
     this.state = {
       doc: null,
-      peers: []
+      peers: [],
+      docs: []
     };
   }
 
@@ -91,6 +106,11 @@ class App extends Component {
 
     hm.on('document:updated', (docId, doc, prevDoc) => {
       this.setState({ doc });
+      this.updateDocs();
+    });
+
+    hm.on('document:ready', () => {
+      this.updateDocs();
     });
   }
 
@@ -103,17 +123,31 @@ class App extends Component {
         changeDoc.peers = {};
       })
       this.setState({ doc: changedDoc });
+      this.updateDocs();
     });
   }
 
-  onKeyPress(ev) {
-    if (ev.key === 'Enter') {
-      let docId = ev.target.value;
-      ev.target.value = '';
-      hm.open(docId);
-      hm.once('document:ready', (docId, doc) => {
+  updateDocs() {
+    let docs = Object.keys(hm.docs).map((docId) => {
+      return { value: docId, label: hm.docs[docId].title };
+    });
+    this.setState({ docs });
+  }
+
+  onSelectDoc(selected) {
+    let docId = selected.value;
+    try {
+      if (hm.has(docId)) {
+        let doc = hm.find(docId);
         this.setState({ doc: doc, peers: this.uniquePeers(doc) });
-      });
+      } else {
+        hm.open(docId);
+        hm.once('document:ready', (docId, doc) => {
+          this.setState({ doc: doc, peers: this.uniquePeers(doc) });
+        });
+      }
+    } catch(e) {
+      console.log(e);
     }
   }
 
@@ -133,10 +167,13 @@ class App extends Component {
   }
 
   onEditTitle(title) {
-    let doc = hm.change(this.state.doc, (changeDoc) => {
-      changeDoc.title = title;
-    });
-    this.setState({ doc });
+    if (title) {
+      let doc = hm.change(this.state.doc, (changeDoc) => {
+        changeDoc.title = title;
+      });
+      this.setState({ doc });
+      this.updateDocs();
+    }
   }
 
   onEditSelect(caretPos) {
@@ -158,7 +195,13 @@ class App extends Component {
     return <main role='main'>
       <nav>
         <button onClick={this.createNewDocument.bind(this)}>Create new document</button>
-        <input onKeyPress={this.onKeyPress.bind(this)} type='text' placeholder='Open document' />
+        <Creatable
+          style={{width: '12em'}}
+          placeholder='Open document'
+          onChange={this.onSelectDoc.bind(this)}
+          options={this.state.docs}
+          promptTextCreator={(label) => `Open '${shrinkId(label)}'`}
+        />
       </nav>
       {this.state.doc && <InlineEditable className='doc-title' value={this.state.doc.title} onEdit={this.onEditTitle.bind(this)} />}
       {this.state.doc && <div>{this.state.peers.length} peers</div>}
@@ -310,11 +353,12 @@ class Editor extends Component {
 }
 
 const hm = new Hypermerge({
-  path: ram
+  path: path
 });
 
 hm.once('ready', (hm) => {
   hm.joinSwarm({utp: false}); // getting an error with utp?
+
   // TODO not sure if this is the best id to use,
   // since it doesn't seem like peers have access to it
   let id = hm.swarm.id.toString('hex');
