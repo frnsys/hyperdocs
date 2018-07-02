@@ -39,9 +39,27 @@ input[type=text] {
 textarea {
   width: 100%;
   min-height: 50vh;
+}
+textarea, .highlights {
   padding: 1em;
   margin: 1em 0;
 }
+.highlights {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  pointer-events: none;
+  white-space: pre-line;
+}
+.highlight {
+  opacity: 0.2;
+}
+.highlight-text {
+  visibility: hidden;
+}
+
 .doc-preview {
   min-height: 50vh;
   padding: 1em;

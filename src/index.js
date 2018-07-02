@@ -102,7 +102,7 @@ class App extends Component {
     });
 
     hm.on('peer:left', (actorId, peer) => {
-      if (this.state.doc) {
+      if (this.state.doc && peer.remoteId) {
         this.setState({ peers: this.uniquePeers(this.state.doc) });
         let id = peer.remoteId.toString('hex');
         id = this.state.peerIds[id];
@@ -185,9 +185,13 @@ class App extends Component {
     }
   }
 
-  onEditSelect(caretPos) {
+  onEditSelect(caretPos, caretIdx) {
+    // update peers about caret position
     let doc = hm.change(this.state.doc, (changeDoc) => {
-      changeDoc.peers[this.props.id] = caretPos;
+      changeDoc.peers[this.props.id] = {
+        pos: caretPos,
+        idx: caretIdx
+      };
     });
     this.setState({ doc });
   }
@@ -255,8 +259,15 @@ class Editor extends Component {
     });
 
     // update caret position
-    let caretPos = getCaretCoordinates(textarea, textarea.selectionStart);
-    this.props.onSelect(caretPos);
+    let caretPos = {
+      start: getCaretCoordinates(textarea, textarea.selectionStart),
+      end: getCaretCoordinates(textarea, textarea.selectionEnd)
+    };
+    let caretIdx = {
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd
+    };
+    this.props.onSelect(caretPos, caretIdx);
   }
 
   onChange(ev) {
@@ -329,18 +340,31 @@ class Editor extends Component {
       main = (
         <div>
           {Object.keys(this.props.doc.peers).map((id) => {
+            // show peer caret positions
             if (id === this.props.id) return;
-            let pos = this.props.doc.peers[id];
+            let peer = this.props.doc.peers[id];
+            let pos = peer.pos.end;
+            let idx = peer.idx;
             let color = colors[parseInt(id, 16) % colors.length];
             let style = {
               position: 'absolute',
               background: color,
               left: pos.left
             };
+
+            let highlight = '';
+            if (idx.start !== idx.end) {
+              let text = this.state.value;
+              let start = text.substr(0, idx.start);
+              let highlighted = text.substring(idx.start, idx.end);
+              let end = text.substr(idx.end);
+              highlight = <div className='highlights'><span className='highlight-text'>{start}</span><span className='highlight' style={{background: color}}><span className='highlight-text'>{highlighted}</span></span><span className='highlight-text'>{end}</span></div>;
+            }
             return (
               <div key={id}>
                 <div className='peer-label' style={{top: pos.top, ...style}}>{id.substr(0, 6)}</div>
                 <div className='peer-cursor' style={{top: pos.top + pos.height, ...style}}></div>
+                {highlight}
               </div>);
           })}
           <textarea
