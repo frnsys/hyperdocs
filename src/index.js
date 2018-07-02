@@ -8,8 +8,8 @@ import ReactMarkdown from 'react-markdown';
 import { Creatable } from 'react-select';
 import 'react-select/dist/react-select.css';
 
-// const path = 'docs';
-const path = ram;
+const path = 'docs';
+// const path = ram;
 
 const colors = [
   '#1313ef',
