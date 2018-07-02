@@ -2,7 +2,7 @@
 
 EXPERIMENTAL
 
-p2p collaborative document editing, built on [`hypermerge`](https://github.com/automerge/hypermerge).
+p2p collaborative document editing, built on [`hypermerge`](https://github.com/automerge/hypermerge). Besides basic collaborative editing, you can also see peer names, cursors, and text selections.
 
 # Usage
 
