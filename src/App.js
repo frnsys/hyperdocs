@@ -49,10 +49,17 @@ class App extends Component {
         id = this.state.peerIds[id];
         let changedDoc = this.props.hm.change(this.state.doc, (changeDoc) => {
           delete changeDoc.peers[id];
-        })
+        });
         this.setState({ doc: changedDoc, peers: this.uniquePeers(this.state.doc) });
       }
     });
+
+    // remove self when closing window
+    window.onbeforeunload = () => {
+      let changedDoc = this.props.hm.change(this.state.doc, (changeDoc) => {
+        delete changeDoc.peers[this.props.id];
+      });
+    }
 
     this.props.hm.on('document:updated', (docId, doc, prevDoc) => {
       this.setState({ doc });
@@ -60,7 +67,6 @@ class App extends Component {
     });
 
     this.props.hm.on('document:ready', (docId, doc, prevDoc) => {
-      console.log('DOCUMENT READY');
       let changedDoc = this.props.hm.change(doc, (changeDoc) => {
         if (!changeDoc.text) {
           changeDoc.text = new Automerge.Text();

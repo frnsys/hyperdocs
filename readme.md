@@ -14,3 +14,5 @@ p2p collaborative document editing, built on [`hypermerge`](https://github.com/a
 # To figure out
 
 - What's the best way to share docs/invite people? Just rely on other messaging services?
+- Buggy when `path` is not `ram`.
+    - May be related to: <https://github.com/automerge/automerge/issues/92>

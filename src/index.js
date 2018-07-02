@@ -4,8 +4,8 @@ import Hypermerge from 'hypermerge';
 import ram from 'random-access-memory';
 import {render} from 'react-dom';
 
-// const path = 'docs';
-const path = ram;
+const path = 'docs';
+// const path = ram;
 
 const colors = [
   '#1313ef',
