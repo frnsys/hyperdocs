@@ -81,6 +81,7 @@ class App extends Component {
     super(props);
     this.state = {
       doc: null,
+      name: '',
       peers: [],
       docs: [],
       peerIds: {}
@@ -130,6 +131,9 @@ class App extends Component {
         changeDoc.text = new Automerge.Text();
         changeDoc.title = 'Untitled';
         changeDoc.peers = {};
+        changeDoc.peers[this.props.id] = {
+          name: this.state.name
+        };
       })
       this.setState({ doc: changedDoc });
       this.updateDocs();
@@ -152,6 +156,11 @@ class App extends Component {
       } else {
         hm.open(docId);
         hm.once('document:ready', (docId, doc) => {
+          doc = hm.change(doc, (changeDoc) => {
+            changeDoc.peers[this.props.id] = {
+              name: this.state.name
+            };
+          });
           this.setState({ doc: doc, peers: this.uniquePeers(doc) });
         });
       }
@@ -185,13 +194,22 @@ class App extends Component {
     }
   }
 
+  onEditName(ev) {
+    let name = ev.target.value;
+    if (name && this.state.doc) {
+      let doc = hm.change(this.state.doc, (changeDoc) => {
+        changeDoc.peers[this.props.id].name = name;
+      });
+      this.setState({ doc });
+    }
+    this.setState({ name });
+  }
+
   onEditSelect(caretPos, caretIdx) {
     // update peers about caret position
     let doc = hm.change(this.state.doc, (changeDoc) => {
-      changeDoc.peers[this.props.id] = {
-        pos: caretPos,
-        idx: caretIdx
-      };
+      changeDoc.peers[this.props.id].pos = caretPos;
+      changeDoc.peers[this.props.id].idx = caretIdx;
     });
     this.setState({ doc });
   }
@@ -208,6 +226,7 @@ class App extends Component {
     return <main role='main'>
       <nav>
         <button onClick={this.createNewDocument.bind(this)}>Create new document</button>
+        <input placeholder='Name' type='text' className='doc-name' value={this.state.name} onChange={this.onEditName.bind(this)} />
         <Creatable
           style={{width: '12em'}}
           placeholder='Open document'
@@ -360,9 +379,10 @@ class Editor extends Component {
               let end = text.substr(idx.end);
               highlight = <div className='highlights'><span className='highlight-text'>{start}</span><span className='highlight' style={{background: color}}><span className='highlight-text'>{highlighted}</span></span><span className='highlight-text'>{end}</span></div>;
             }
+            let name = peer.name ? peer.name : id.substr(0, 6);
             return (
               <div key={id}>
-                <div className='peer-label' style={{top: pos.top, ...style}}>{id.substr(0, 6)}</div>
+                <div className='peer-label' style={{top: pos.top, ...style}}>{name}</div>
                 <div className='peer-cursor' style={{top: pos.top + pos.height, ...style}}></div>
                 {highlight}
               </div>);
