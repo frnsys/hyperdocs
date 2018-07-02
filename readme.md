@@ -10,7 +10,3 @@ p2p collaborative document editing, built on [`hypermerge`](https://github.com/a
 2. `npm install`
 3. `npm run compile`
 4. `npm start`
-
-# Nice-to-haves
-
-- Peer identities?
