@@ -62,11 +62,19 @@ class App extends Component {
     }
 
     this.props.hm.on('document:updated', (docId, doc, prevDoc) => {
-      this.setState({ doc });
-      this.updateDocsList();
+      if (this.state.doc && this.props.hm.getId(this.state.doc) == docId) {
+        this.setState({ doc });
+        this.updateDocsList();
+      }
     });
 
     this.props.hm.on('document:ready', (docId, doc, prevDoc) => {
+      this.updateDocsList();
+    });
+  }
+
+  listenForDocument() {
+    this.props.hm.once('document:ready', (docId, doc, prevDoc) => {
       let changedDoc = this.props.hm.change(doc, (changeDoc) => {
         if (!changeDoc.text) {
           changeDoc.text = new Automerge.Text();
