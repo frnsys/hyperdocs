@@ -22,7 +22,7 @@ class Peer extends Component {
       let start = text.substr(0, idx.start);
       let highlighted = text.substring(idx.start, idx.end);
       let end = text.substr(idx.end);
-      highlight = <div className='highlights'><span className='highlight-text'>{start}</span><span className='highlight' style={{background: color}}><span className='highlight-text'>{highlighted}</span></span><span className='highlight-text'>{end}</span></div>;
+      highlight = <div className='highlights' style={{top: -this.props.offsetTop}}><span className='highlight-text'>{start}</span><span className='highlight' style={{background: color}}><span className='highlight-text'>{highlighted}</span></span><span className='highlight-text'>{end}</span></div>;
     }
 
     let top = pos.top - this.props.offsetTop;
