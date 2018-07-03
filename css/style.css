@@ -50,7 +50,7 @@ textarea, .highlights {
   left: 0;
   bottom: 0;
   pointer-events: none;
-  white-space: pre-line;
+  white-space: pre-wrap;
 }
 .highlight {
   opacity: 0.2;
