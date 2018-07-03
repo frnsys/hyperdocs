@@ -83,6 +83,7 @@ textarea, .highlights {
 .doc-editor {
   position: relative;
   overflow: hidden;
+  margin: 1em 0;
 }
 
 .peer-label {
