@@ -78,22 +78,32 @@ class App extends Component {
         };
       });
       this.setState({ doc: changedDoc, peers: this.uniquePeers(doc) });
-      this.updateDocsList();
     });
   }
 
   createNewDocument() {
     this.props.hm.create();
+    this.listenForDocument();
   }
 
-  openDocument(selected) {
+  selectDocument(selected) {
     let docId = selected.value;
+    this.openDocument(docId);
+  }
+
+  openDocument(docId) {
     try {
       if (this.props.hm.has(docId)) {
         let doc = this.props.hm.find(docId);
+        doc = this.props.hm.change(doc, (changeDoc) => {
+          changeDoc.peers[this.props.id] = {
+            name: this.state.name
+          };
+        });
         this.setState({ doc: doc, peers: this.uniquePeers(doc) });
       } else {
         this.props.hm.open(docId);
+        this.listenForDocument();
       }
     } catch(e) {
       console.log(e);
@@ -162,14 +172,27 @@ class App extends Component {
   }
 
   render() {
-    let doc;
+    let main;
     if (this.state.doc) {
-      doc = (
+      main = (
         <div id='doc'>
           <InlineEditable className='doc-title' value={this.state.doc.title} onEdit={this.onEditTitle.bind(this)} />
           <div>{this.state.peers.length} peers</div>
           <Editor id={this.props.id} doc={this.state.doc} onEdit={this.onEdit.bind(this)} onSelect={this.onChangeSelect.bind(this)} colors={this.props.colors} />
           <div className='doc-id'>Copy to share: <span>{this.props.hm.getId(this.state.doc)}</span></div>
+        </div>
+      );
+    } else {
+      // TODO these should be proper accessible links
+      // which support browser history/clicking back
+      main = (
+        <div>
+          <h2>Documents</h2>
+          <ul id='doc-list'>
+            {this.state.docs.map((d) => {
+              return <li key={d.value}><a onClick={() => this.openDocument(d.value)}>{d.label}</a></li>;
+            })}
+          </ul>
         </div>
       );
     }
@@ -181,12 +204,12 @@ class App extends Component {
         <Creatable
           style={{width: '12em'}}
           placeholder='Open document'
-          onChange={this.openDocument.bind(this)}
+          onChange={this.selectDocument.bind(this)}
           options={this.state.docs}
           promptTextCreator={(label) => `Open '${shrinkId(label)}'`}
         />
       </nav>
-      {doc}
+      {main}
     </main>
   }
 }

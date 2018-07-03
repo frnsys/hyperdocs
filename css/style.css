@@ -117,6 +117,18 @@ textarea, .highlights {
   max-width: 8em;
 }
 
+#doc-list {
+  margin: 0;
+  padding: 0;
+}
+#doc-list li {
+  list-style-type: none;
+}
+#doc-list a {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 .Select-control {
   border-radius: 0.2em !important;
 }
