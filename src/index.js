@@ -25,6 +25,8 @@ hm.once('ready', (hm) => {
   hm.joinSwarm({utp: false}); // getting an error with utp?
 
   let id = hm.swarm.id.toString('hex');
+  console.log(`My ID: ${id}`);
+
   let main = document.getElementById('main');
   render(<App hm={hm} id={id} colors={colors} />, main);
 });

@@ -161,6 +161,7 @@ class Editor extends Component {
             // show peer caret positions
             if (id === this.props.id) return;
             let peer = this.props.doc.peers[id];
+            if (!peer.pos) return;
             let color = this.props.colors[parseInt(id, 16) % this.props.colors.length];
             return <Peer key={id} id={id} peer={peer} color={color} text={this.state.value} />;
           })}
