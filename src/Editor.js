@@ -25,11 +25,13 @@ class Peer extends Component {
       highlight = <div className='highlights'><span className='highlight-text'>{start}</span><span className='highlight' style={{background: color}}><span className='highlight-text'>{highlighted}</span></span><span className='highlight-text'>{end}</span></div>;
     }
 
+    let top = pos.top - this.props.offsetTop;
+
     let name = peer.name ? peer.name : this.props.id.substr(0, 6);
     return (
       <div>
-        <div className='peer-label' style={{top: pos.top, ...style}}>{name}</div>
-        <div className='peer-cursor' style={{top: pos.top + pos.height, ...style}}></div>
+        <div className='peer-label' style={{top: top, ...style}}>{name}</div>
+        <div className='peer-cursor' style={{top: top + pos.height, ...style}}></div>
         {highlight}
       </div>);
   }
@@ -40,6 +42,7 @@ class Editor extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      scrollTop: 0,
       value: props.doc.text.join(''),
       preview: false
     };
@@ -143,6 +146,12 @@ class Editor extends Component {
     }
   }
 
+  onScroll() {
+    this.setState({
+      scrollTop: this.textarea.current.scrollTop
+    });
+  }
+
   render() {
     let main;
     if (this.state.preview) {
@@ -163,13 +172,14 @@ class Editor extends Component {
             let peer = this.props.doc.peers[id];
             if (!peer.pos) return;
             let color = this.props.colors[parseInt(id, 16) % this.props.colors.length];
-            return <Peer key={id} id={id} peer={peer} color={color} text={this.state.value} />;
+            return <Peer key={id} id={id} peer={peer} color={color} text={this.state.value} offsetTop={this.state.scrollTop} />;
           })}
           <textarea
             ref={this.textarea}
             value={this.state.value}
             onKeyDown={this.onKeyPress.bind(this)}
             onSelect={this.onSelect.bind(this)}
+            onScroll={this.onScroll.bind(this)}
             onChange={this.onChange.bind(this)}></textarea>
         </div>);
     }
