@@ -30,8 +30,8 @@ class Peer extends Component {
     let name = peer.name ? peer.name : this.props.id.substr(0, 6);
     return (
       <div>
-        <div className='peer-label' style={{top: top, ...style}}>{name}</div>
-        <div className='peer-cursor' style={{top: top + pos.height, ...style}}></div>
+        <div className='peer-label' style={{top: top - pos.height, ...style}}>{name}</div>
+        <div className='peer-cursor' style={{top: top, ...style}}></div>
         {highlight}
       </div>);
   }
@@ -165,7 +165,7 @@ class Editor extends Component {
       </div>;
     } else {
       main = (
-        <div>
+        <div className='doc-editor'>
           {Object.keys(this.props.doc.peers).map((id) => {
             // show peer caret positions
             if (id === this.props.id) return;
