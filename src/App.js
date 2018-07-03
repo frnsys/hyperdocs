@@ -22,7 +22,8 @@ class App extends Component {
       name: '',
       peers: [],
       docs: [],
-      peerIds: {}
+      peerIds: {},
+      lastDiffs: []
     };
   }
 
@@ -63,7 +64,9 @@ class App extends Component {
 
     this.props.hm.on('document:updated', (docId, doc, prevDoc) => {
       if (this.state.doc && this.props.hm.getId(this.state.doc) == docId) {
-        this.setState({ doc });
+        let diff = Automerge.diff(prevDoc, doc);
+        let lastDiffs = diff.filter((d) => d.type === 'text');
+        this.setState({ doc, lastDiffs });
         this.updateDocsList();
       }
     });
@@ -161,7 +164,7 @@ class App extends Component {
     this.setState({ name });
   }
 
-  onChangeSelect(caretPos, caretIdx) {
+  onChangeSelection(caretPos, caretIdx) {
     // update peers about caret position
     let doc = this.props.hm.change(this.state.doc, (changeDoc) => {
       changeDoc.peers[this.props.id].pos = caretPos;
@@ -186,7 +189,14 @@ class App extends Component {
         <div id='doc'>
           <InlineEditable className='doc-title' value={this.state.doc.title} onEdit={this.onEditTitle.bind(this)} />
           <div>{this.state.peers.length} peers</div>
-          <Editor id={this.props.id} doc={this.state.doc} onEdit={this.onEdit.bind(this)} onSelect={this.onChangeSelect.bind(this)} colors={this.props.colors} />
+          <Editor
+            id={this.props.id}
+            colors={this.props.colors}
+            peers={this.state.doc.peers}
+            diffs ={this.state.lastDiffs}
+            text={this.state.doc.text.join('')}
+            onEdit={this.onEdit.bind(this)}
+            onSelect={this.onChangeSelection.bind(this)} />
           <div className='doc-id'>Copy to share: <span>{this.props.hm.getId(this.state.doc)}</span></div>
         </div>
       );

@@ -1,3 +1,4 @@
+import Automerge from 'automerge';
 import React, {Component} from 'react';
 import ReactMarkdown from 'react-markdown';
 import getCaretCoordinates from 'textarea-caret';
@@ -22,6 +23,8 @@ class Peer extends Component {
       let start = text.substr(0, idx.start);
       let highlighted = text.substring(idx.start, idx.end);
       let end = text.substr(idx.end);
+
+      // bleh cleanup
       highlight = <div className='highlights' style={{top: -this.props.offsetTop}}><span className='highlight-text'>{start}</span><span className='highlight' style={{background: color}}><span className='highlight-text'>{highlighted}</span></span><span className='highlight-text'>{end}</span></div>;
     }
 
@@ -43,7 +46,6 @@ class Editor extends Component {
     super(props);
     this.state = {
       scrollTop: 0,
-      value: props.doc.text.join(''),
       preview: false
     };
     this.textarea = React.createRef();
@@ -55,8 +57,33 @@ class Editor extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if (prevProps.doc !== this.props.doc) {
-      this.setState({ value: this.props.doc.text.join('') });
+    if (prevProps.text !== this.props.text && this.props.diffs.length) {
+      // only adjust cursor if text has changed
+      // from our perspective.
+      // if it hasn't, we assume we made the
+      // changes and our caret has automatically updated.
+      let start = this.state.selectionStart;
+      let end = this.state.selectionEnd;
+      this.props.diffs.forEach((d) => {
+        if (d.index < start) {
+          if (d.action === 'insert') {
+            start += 1;
+          } else if (d.action === 'remove') {
+            start -= 1;
+          }
+        }
+
+        if (d.index < end) {
+          if (d.action === 'insert') {
+            end += 1;
+          } else if (d.action === 'remove') {
+            end -= 1;
+          }
+        }
+      });
+      this.textarea.current.selectionStart = start;
+      this.textarea.current.selectionEnd = end;
+      this.onSelect();
     }
 
     // focus textarea/preview if just changed
@@ -95,7 +122,7 @@ class Editor extends Component {
     let edits = [];
     let caret = this.textarea.current.selectionEnd;
     let newText = ev.target.value;
-    let prevText = this.state.value;
+    let prevText = this.props.text;
     let diff = newText.length - prevText.length;
     let inserted = diff > 0;
     diff = Math.abs(diff);
@@ -135,7 +162,6 @@ class Editor extends Component {
       changed: changed
     });
     this.props.onEdit(edits);
-    this.setState({value: ev.target.value });
   }
 
   onKeyPress(ev) {
@@ -160,23 +186,23 @@ class Editor extends Component {
         className='doc-preview'
         tabIndex='-1'
         onKeyDown={this.onKeyPress.bind(this)}>
-        <ReactMarkdown source={this.state.value} />
+        <ReactMarkdown source={this.props.text} />
         <div className='doc-preview-label'>Preview</div>
       </div>;
     } else {
       main = (
         <div className='doc-editor'>
-          {Object.keys(this.props.doc.peers).map((id) => {
+          {Object.keys(this.props.peers).map((id) => {
             // show peer caret positions
             if (id === this.props.id) return;
-            let peer = this.props.doc.peers[id];
+            let peer = this.props.peers[id];
             if (!peer.pos) return;
             let color = this.props.colors[parseInt(id, 16) % this.props.colors.length];
-            return <Peer key={id} id={id} peer={peer} color={color} text={this.state.value} offsetTop={this.state.scrollTop} />;
+            return <Peer key={id} id={id} peer={peer} color={color} text={this.props.text} offsetTop={this.state.scrollTop} />;
           })}
           <textarea
             ref={this.textarea}
-            value={this.state.value}
+            value={this.props.text}
             onKeyDown={this.onKeyPress.bind(this)}
             onSelect={this.onSelect.bind(this)}
             onScroll={this.onScroll.bind(this)}
