@@ -90,6 +90,8 @@ class Comments extends Component {
 
     if (this.props.focused) {
       style.border = '2px solid #7070ff';
+    } else {
+      style.display = 'none';
     }
 
     return (
@@ -268,7 +270,7 @@ class Editor extends Component {
       let addComment = '';
       if (this.textarea.current && this.textarea.current.selectionStart !== this.textarea.current.selectionEnd) {
         let top = getCaretCoordinates(this.textarea.current, this.textarea.current.selectionStart).top;
-        addComment = <Comments key='new' top={top} focused={true} thread={[]} addComment={(body) => this.props.addComment(null, body)} />;
+        addComment = <Comments key='new' top={top} focused={true} thread={[]} addComment={(body) => this.props.addComment(null, body, this.textarea.current.selectionStart, this.textarea.current.selectionEnd)} />;
       }
       main = (
         <div className='doc-editor'>

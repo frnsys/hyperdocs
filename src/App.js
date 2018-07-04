@@ -87,8 +87,10 @@ class App extends Component {
           changeDoc.comments = {};
 
           // TODO TESTING
+          let id = crypto.randomBytes(32).toString('hex');
           changeDoc.text.insertAt(0, ...['a', 'b', 'c', 'd', 'e', 'f']);
-          changeDoc.comments[crypto.randomBytes(32)] = {
+          changeDoc.comments[id] = {
+            id: id,
             start: 0,
             end: 5,
             thread: [{
@@ -139,7 +141,7 @@ class App extends Component {
     }
   }
 
-  addComment(id, body) {
+  addComment(id, body, start, end) {
     let doc = this.props.hm.change(this.state.doc, (changeDoc) => {
       // TODO ideally this uses persistent id or sth
       let name = changeDoc.peers[this.props.id].name;
@@ -150,10 +152,11 @@ class App extends Component {
           body: body
         });
       } else {
-        let id = crypto.randomBytes(32);
+        let id = crypto.randomBytes(32).toString('hex');
         changeDoc.comments[id] = {
-          start: 0, // TODO
-          end: 5,
+          id: id,
+          start: start,
+          end: end,
           thread: [{
             created: Date.now(),
             author: name,
