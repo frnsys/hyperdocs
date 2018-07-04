@@ -118,11 +118,6 @@ class Editor extends Component {
     // on new textarea selection/caret movement,
     // update peers
     let textarea = this.textarea.current;
-    this.setState({
-      selectionStart: textarea.selectionStart,
-      selectionEnd: textarea.selectionEnd
-    });
-
     let caretPos = {
       start: getCaretCoordinates(textarea, textarea.selectionStart),
       end: getCaretCoordinates(textarea, textarea.selectionEnd)
@@ -131,6 +126,13 @@ class Editor extends Component {
       start: textarea.selectionStart,
       end: textarea.selectionEnd
     };
+
+    this.setState({
+      selectionStart: textarea.selectionStart,
+      selectionEnd: textarea.selectionEnd,
+      caretPos: caretPos
+    });
+
     this.props.onSelect(caretPos, caretIdx);
   }
 
@@ -196,6 +198,10 @@ class Editor extends Component {
     });
   }
 
+  addComment(startIdx, endIdx) {
+    console.log('adding comment');
+  }
+
   render() {
     let main;
     if (this.state.preview) {
@@ -208,8 +214,14 @@ class Editor extends Component {
         <div className='doc-preview-label'>Preview</div>
       </div>;
     } else {
+      let addCommentStyle = {display: 'none'};
+      if (this.state.caretPos && this.state.selectionStart != this.state.selectionEnd) {
+        let top = this.state.caretPos.end.top - this.state.scrollTop - this.state.caretPos.end.height;
+        addCommentStyle = {display: 'block', top: top, left: this.state.caretPos.end.left};
+      }
       main = (
         <div className='doc-editor'>
+          <div className='doc-add-comment' style={addCommentStyle} onClick={() => this.addComment(this.state.selectionStart, this.state.selectionEnd)}>Add comment</div>
           {Object.keys(this.props.peers).map((id) => {
             // show peer caret positions
             if (id === this.props.id) return;

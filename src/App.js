@@ -83,6 +83,7 @@ class App extends Component {
           changeDoc.text = new Automerge.Text();
           changeDoc.title = 'Untitled';
           changeDoc.peers = {};
+          changeDoc.comments = [];
         }
         changeDoc.peers[this.props.id] = {
           name: this.state.name

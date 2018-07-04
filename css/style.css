@@ -144,3 +144,19 @@ textarea, .highlighter {
 .Select-placeholder {
   line-height: 26px !important;
 }
+
+.doc-add-comment {
+  position: absolute;
+  font-size: 0.6em;
+  background: blue;
+  background: #d8eafd;
+  color: #000;
+  padding: 0.3em 0.3em 0.1em 0.3em;
+  cursor: pointer;
+  border: 1px solid #becede;
+  border-radius: 0.2em;
+  z-index: 1;
+}
+.doc-add-comment:hover {
+  background: #cfe4fc;
+}
