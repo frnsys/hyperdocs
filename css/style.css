@@ -204,6 +204,18 @@ textarea {
   min-height: 5em;
 }
 
+.doc-comment-resolve {
+  position: absolute;
+  font-size: 0.75em;
+  right: 0.25em;
+  top: 0.25em;
+  border: 1px solid #ccc;
+  background: #e5e5e5;
+}
+.doc-comment-resolve:hover {
+  background: #dadada;
+}
+
 .doc-comment button {
   width: 100%;
   padding: 0.5em;

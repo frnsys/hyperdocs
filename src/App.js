@@ -93,6 +93,7 @@ class App extends Component {
             id: id,
             start: 0,
             end: 5,
+            resolved: false,
             thread: [{
               created: Date.now(),
               author: 'Francis',
@@ -157,6 +158,7 @@ class App extends Component {
           id: id,
           start: start,
           end: end,
+          resolved: false,
           thread: [{
             created: Date.now(),
             author: name,
@@ -164,6 +166,13 @@ class App extends Component {
           }]
         };
       }
+    });
+    this.setState({ doc: doc });
+  }
+
+  resolveComment(id) {
+    let doc = this.props.hm.change(this.state.doc, (changeDoc) => {
+      changeDoc.comments[id].resolved = true;
     });
     this.setState({ doc: doc });
   }
@@ -263,6 +272,7 @@ class App extends Component {
             diffs ={this.state.lastDiffs}
             text={this.state.doc.text.join('')}
             addComment={this.addComment.bind(this)}
+            resolveComment={this.resolveComment.bind(this)}
             onEdit={this.onEdit.bind(this)}
             onSelect={this.onChangeSelection.bind(this)} />
           <div className='doc-id'>Copy to share: <span>{this.props.hm.getId(this.state.doc)}</span></div>

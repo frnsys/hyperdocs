@@ -96,6 +96,7 @@ class Comments extends Component {
 
     return (
       <div className='doc-comments' style={style}>
+        <button className='doc-comment-resolve' onClick={this.props.resolveComment}>Resolve</button>
         {this.props.thread.map((c) => {
           return (
             <div key={`${c.author}_${c.created}`} className='doc-comment'>
@@ -276,13 +277,16 @@ class Editor extends Component {
         <div className='doc-editor'>
           <div className='doc-overlay' style={{top: - this.state.scrollTop}}>
             {Object.keys(this.props.comments).map((id) => {
-              let top = 0;
               let c = this.props.comments[id];
+              if (c.resolved) return;
+
+              let top = 0;
               if (this.textarea.current) {
                 top = getCaretCoordinates(this.textarea.current, c.start).top;
               }
               return <Comments key={id}
                       top={top}
+                      resolveComment={() => this.props.resolveComment(id)}
                       addComment={(body) => this.props.addComment(id, body)}
                       focused={id === this.state.focusedComment}
                       thread={c.thread} />;
@@ -296,6 +300,7 @@ class Editor extends Component {
                 // or fixed for all comments
                 let color = 'blue';
                 let c = this.props.comments[id];
+                if (c.resolved) return;
                 return <Highlight
                   key={id}
                   text={this.props.text}
