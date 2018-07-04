@@ -274,7 +274,7 @@ class Editor extends Component {
       }
       main = (
         <div className='doc-editor'>
-          <div className='doc-overlay' style={{position: 'absolute', top: - this.state.scrollTop}}>
+          <div className='doc-overlay' style={{top: - this.state.scrollTop}}>
             {Object.keys(this.props.comments).map((id) => {
               let top = 0;
               let c = this.props.comments[id];
