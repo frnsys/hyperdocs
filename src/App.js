@@ -1,4 +1,5 @@
 import Editor from './Editor';
+import crypto from 'crypto';
 import InlineEditable from './InlineEditable';
 import { Creatable } from 'react-select';
 import 'react-select/dist/react-select.css';
@@ -84,6 +85,23 @@ class App extends Component {
           changeDoc.title = 'Untitled';
           changeDoc.peers = {};
           changeDoc.comments = [];
+
+          // TODO TESTING
+          changeDoc.text.insertAt(0, ...['a', 'b', 'c', 'd', 'e', 'f']);
+          changeDoc.comments = [{
+            id: crypto.randomBytes(32),
+            start: 0,
+            end: 5,
+            thread: [{
+              created: Date.now(),
+              author: 'Francis',
+              body: 'This is a test comment'
+            }, {
+              created: 'flobar',
+              author: 'Frank',
+              body: 'This is my response'
+            }]
+          }];
         }
         changeDoc.peers[this.props.id] = {
           name: this.state.name
@@ -139,6 +157,25 @@ class App extends Component {
             changeDoc.text.deleteAt(e.caret);
           }
         }
+
+        // update comment positions as well
+        changeDoc.comments.forEach((c) => {
+          if (e.caret < c.start + 1) {
+            if (e.inserted) {
+              c.start++;
+            } else {
+              c.start--;
+            }
+          }
+
+          if (e.caret < c.end) {
+            if (e.inserted) {
+              c.end++;
+            } else {
+              c.end--;
+            }
+          }
+        });
       });
     });
     this.setState({ doc });

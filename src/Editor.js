@@ -122,17 +122,17 @@ class Editor extends Component {
       this.props.diffs.forEach((d) => {
         if (d.index < start) {
           if (d.action === 'insert') {
-            start += 1;
+            start++;
           } else if (d.action === 'remove') {
-            start -= 1;
+            start--;
           }
         }
 
         if (d.index < end) {
           if (d.action === 'insert') {
-            end += 1;
+            end++;
           } else if (d.action === 'remove') {
-            end -= 1;
+            end--;
           }
         }
       });
@@ -252,25 +252,6 @@ class Editor extends Component {
       </div>;
     } else {
       let addCommentStyle = {display: 'none'};
-
-      // TODO testing with dummy comments
-      // let comments = this.props.comments;
-      let comments = [{
-        id: 'foobar',
-        start: 0,
-        end: 5,
-        thread: [{
-          created: Date.now(),
-          author: 'Francis',
-          body: 'This is a test comment'
-        }, {
-          created: 'flobar',
-          author: 'Frank',
-          body: 'This is my response'
-        }]
-      }];
-      comments = [];
-
       if (this.state.caretPos && this.state.selectionStart != this.state.selectionEnd) {
         let top = this.state.caretPos.end.top - this.state.caretPos.end.height;
         addCommentStyle = {display: 'block', top: top, left: this.state.caretPos.end.left};
@@ -280,7 +261,7 @@ class Editor extends Component {
           <div className='doc-overlay' style={{position: 'absolute', top: - this.state.scrollTop}}>
             <div className='doc-add-comment' style={addCommentStyle} onClick={() => this.addComment(this.state.selectionStart, this.state.selectionEnd)}>Add comment</div>
 
-            {comments.map((c) => {
+            {this.props.comments.map((c) => {
               return <Comments key={c.id} text={this.props.text} {...c} />;
             })}
 
