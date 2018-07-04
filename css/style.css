@@ -40,10 +40,10 @@ textarea {
   width: 100%;
   min-height: 50vh;
 }
-textarea, .highlights {
+textarea, .highlighter {
   padding: 1em;
 }
-.highlights {
+.highlighter {
   position: absolute;
   top: 0;
   right: 0;

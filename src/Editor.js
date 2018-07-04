@@ -4,6 +4,25 @@ import ReactMarkdown from 'react-markdown';
 import getCaretCoordinates from 'textarea-caret';
 
 
+class Highlight extends Component {
+  render() {
+    let text = this.props.text;
+    let start = text.substr(0, this.props.start);
+    let highlight = text.substring(this.props.start, this.props.end);
+    let end = text.substr(this.props.end);
+    let style = {
+      background: this.props.color
+    };
+
+    start = <span className='highlight-text'>{start}</span>;
+    end = <span className='highlight-text'>{end}</span>;
+    highlight = <span className='highlight' style={style}><span className='highlight-text'>{highlight}</span></span>;
+
+    return <div className='highlighter' style={{top: -this.props.offsetTop}}>{start}{highlight}{end}</div>;
+  }
+}
+
+
 class Peer extends Component {
   render() {
     let peer = this.props.peer;
@@ -19,13 +38,12 @@ class Peer extends Component {
     let idx = peer.idx;
     let highlight = '';
     if (idx.start !== idx.end) {
-      let text = this.props.text;
-      let start = text.substr(0, idx.start);
-      let highlighted = text.substring(idx.start, idx.end);
-      let end = text.substr(idx.end);
-
-      // bleh cleanup
-      highlight = <div className='highlights' style={{top: -this.props.offsetTop}}><span className='highlight-text'>{start}</span><span className='highlight' style={{background: color}}><span className='highlight-text'>{highlighted}</span></span><span className='highlight-text'>{end}</span></div>;
+      highlight = <Highlight
+                    text={this.props.text}
+                    start={idx.start}
+                    end={idx.end}
+                    color={color}
+                    offsetTop={this.props.offsetTop} />;
     }
 
     let top = pos.top - this.props.offsetTop;
