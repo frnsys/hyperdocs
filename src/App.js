@@ -194,6 +194,7 @@ class App extends Component {
             id={this.props.id}
             colors={this.props.colors}
             peers={this.state.doc.peers}
+            comments={this.state.doc.comments}
             diffs ={this.state.lastDiffs}
             text={this.state.doc.text.join('')}
             onEdit={this.onEdit.bind(this)}

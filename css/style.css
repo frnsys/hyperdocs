@@ -160,3 +160,9 @@ textarea, .highlighter {
 .doc-add-comment:hover {
   background: #cfe4fc;
 }
+
+.doc-comment {
+  background: #eee;
+  border: 1px solid #ddd;
+  padding: 0.5em;
+}

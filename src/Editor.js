@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import getCaretCoordinates from 'textarea-caret';
 
 
+
 class Highlight extends Component {
   render() {
     let text = this.props.text;
@@ -53,6 +54,46 @@ class Peer extends Component {
       <div>
         <div className='peer-label' style={{top: top - pos.height, ...style}}>{name}</div>
         <div className='peer-cursor' style={{top: top, ...style}}></div>
+        {highlight}
+      </div>);
+  }
+}
+
+
+class Comments extends Component {
+  render() {
+    // TODO styling/positioning needs a lot of work
+    let style = {
+      position: 'fixed',
+      left: 0,
+      top: 0
+    };
+
+    // TODO this could be based on thread author,
+    // or fixed for all comments
+    let color = 'blue';
+
+    let highlight = <Highlight
+      text={this.props.text}
+      start={this.props.start}
+      end={this.props.end}
+      color={color}
+      offsetTop={this.props.offsetTop} />;
+
+    console.log(this.props);
+
+    return (
+      <div className='doc-comments'>
+        <div className='doc-thread' style={style}>
+          {this.props.thread.map((c) => {
+            return (
+              <div key={c.author} className='doc-comment'>
+                <div>{c.author}</div>
+                <div>{c.body}</div>
+                <div>On {c.created}</div>
+              </div>);
+          })}
+        </div>
         {highlight}
       </div>);
   }
@@ -215,6 +256,24 @@ class Editor extends Component {
       </div>;
     } else {
       let addCommentStyle = {display: 'none'};
+
+      // TODO testing with dummy comments
+      // let comments = this.props.comments;
+      let comments = [{
+        id: 'foobar',
+        start: 0,
+        end: 5,
+        thread: [{
+          created: Date.now(),
+          author: 'Francis',
+          body: 'This is a test comment'
+        }, {
+          created: 'flobar',
+          author: 'Frank',
+          body: 'This is my response'
+        }]
+      }];
+
       if (this.state.caretPos && this.state.selectionStart != this.state.selectionEnd) {
         let top = this.state.caretPos.end.top - this.state.scrollTop - this.state.caretPos.end.height;
         addCommentStyle = {display: 'block', top: top, left: this.state.caretPos.end.left};
@@ -222,6 +281,11 @@ class Editor extends Component {
       main = (
         <div className='doc-editor'>
           <div className='doc-add-comment' style={addCommentStyle} onClick={() => this.addComment(this.state.selectionStart, this.state.selectionEnd)}>Add comment</div>
+
+          {comments.map((c) => {
+            return <Comments key={c.id} text={this.props.text} offsetTop={this.state.scrollTop} {...c} />;
+          })}
+
           {Object.keys(this.props.peers).map((id) => {
             // show peer caret positions
             if (id === this.props.id) return;
