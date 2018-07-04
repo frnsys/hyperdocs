@@ -56,6 +56,30 @@ class Peer extends Component {
   }
 }
 
+class AddComment extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      value: ''
+    };
+  }
+
+  addComment() {
+    this.props.addComment(this.state.value);
+
+    // TODO ideally this doesn't happen until
+    // we confirm the comment registered...
+    this.setState({value: ''});
+  }
+
+  render() {
+    return (
+      <div className='doc-comment'>
+        <textarea value={this.state.value} onChange={(ev) => this.setState({value: ev.target.value})} />
+        <button onClick={this.addComment.bind(this)}>Add comment</button>
+      </div>);
+  }
+}
 
 class Comments extends Component {
   render() {
@@ -72,12 +96,13 @@ class Comments extends Component {
       <div className='doc-comments' style={style}>
         {this.props.thread.map((c) => {
           return (
-            <div key={c.author} className='doc-comment'>
+            <div key={`${c.author}_${c.created}`} className='doc-comment'>
               <div className='doc-comment-author'>{c.author}</div>
               <div className='doc-comment-body'>{c.body}</div>
               <div className='doc-comment-datetime'>On {new Date(c.created).toLocaleString()}</div>
             </div>);
         })}
+        <AddComment addComment={this.props.addComment} />
       </div>);
   }
 }
@@ -153,7 +178,7 @@ class Editor extends Component {
     };
 
     // find focused comment, if any
-    let focusedComment = this.props.comments.find(
+    let focusedComment = Object.values(this.props.comments).find(
       (c) => textarea.selectionStart > c.start && textarea.selectionEnd < c.end);
 
     this.setState({
@@ -228,10 +253,6 @@ class Editor extends Component {
     });
   }
 
-  addComment(startIdx, endIdx) {
-    console.log('adding comment');
-  }
-
   render() {
     let main;
     if (this.state.preview) {
@@ -244,32 +265,37 @@ class Editor extends Component {
         <div className='doc-preview-label'>Preview</div>
       </div>;
     } else {
-      let addCommentStyle = {display: 'none'};
-      if (this.state.caretPos && this.state.selectionStart != this.state.selectionEnd) {
-        let top = this.state.caretPos.end.top - this.state.caretPos.end.height;
-        addCommentStyle = {display: 'block', top: top, left: this.state.caretPos.end.left};
+      let addComment = '';
+      if (this.textarea.current && this.textarea.current.selectionStart !== this.textarea.current.selectionEnd) {
+        let top = getCaretCoordinates(this.textarea.current, this.textarea.current.selectionStart).top;
+        addComment = <Comments key='new' top={top} focused={true} thread={[]} addComment={(body) => this.props.addComment(null, body)} />;
       }
       main = (
         <div className='doc-editor'>
           <div className='doc-overlay' style={{position: 'absolute', top: - this.state.scrollTop}}>
-              {this.props.comments.map((c) => {
-                let top = 0;
-                if (this.textarea.current) {
-                  top = getCaretCoordinates(this.textarea.current, c.start).top;
-                }
-                return <Comments key={c.id} top={top} focused={c.id === this.state.focusedComment} {...c} />;
-              })}
+            {Object.keys(this.props.comments).map((id) => {
+              let top = 0;
+              let c = this.props.comments[id];
+              if (this.textarea.current) {
+                top = getCaretCoordinates(this.textarea.current, c.start).top;
+              }
+              return <Comments key={id}
+                      top={top}
+                      addComment={(body) => this.props.addComment(id, body)}
+                      focused={id === this.state.focusedComment}
+                      thread={c.thread} />;
+            })}
+            {addComment}
           </div>
           <div className='doc-editor-constrained'>
             <div className='doc-overlay' style={{position: 'absolute', top: - this.state.scrollTop}}>
-              <div className='doc-add-comment' style={addCommentStyle} onClick={() => this.addComment(this.state.selectionStart, this.state.selectionEnd)}>Add comment</div>
-
-              {this.props.comments.map((c) => {
+              {Object.keys(this.props.comments).map((id) => {
                 // TODO this could be based on thread author,
                 // or fixed for all comments
                 let color = 'blue';
+                let c = this.props.comments[id];
                 return <Highlight
-                  key={c.id}
+                  key={id}
                   text={this.props.text}
                   start={c.start}
                   end={c.end}
@@ -288,6 +314,7 @@ class Editor extends Component {
             <textarea
               ref={this.textarea}
               value={this.props.text}
+              className='doc-editor-textarea'
               onKeyDown={this.onKeyPress.bind(this)}
               onSelect={this.onSelect.bind(this)}
               onScroll={this.onScroll.bind(this)}

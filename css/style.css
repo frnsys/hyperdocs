@@ -38,10 +38,13 @@ input[type=text] {
 
 textarea {
   width: 100%;
-  min-height: 50vh;
+  padding: 0.5em;
   display: block;
 }
-textarea, .highlighter {
+.doc-editor-textarea {
+  min-height: 50vh;
+}
+.doc-editor-textarea, .highlighter {
   padding: 1em;
 }
 .highlighter {
@@ -170,7 +173,8 @@ textarea, .highlighter {
   border-bottom: 1px solid #ddd;
   padding: 0.5em;
   font-size: 0.9em;
-  min-width: 15em;
+  width: 15em;
+  word-break: break-all;
 }
 .doc-comment:last-child {
   border-bottom: none;
@@ -194,4 +198,16 @@ textarea, .highlighter {
   z-index: 1;
   box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
   border: 2px solid #ddd;
+}
+
+.doc-comment textarea {
+  min-height: 5em;
+}
+
+.doc-comment button {
+  width: 100%;
+  padding: 0.5em;
+  background: #7070ff;
+  color: #fff;
+  border-radius: 0 0 0.2em 0.2em;
 }

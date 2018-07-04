@@ -20,7 +20,7 @@ class App extends Component {
     super(props);
     this.state = {
       doc: null,
-      name: '',
+      name: props.id.substr(0, 6),
       peers: [],
       docs: [],
       peerIds: {},
@@ -84,12 +84,11 @@ class App extends Component {
           changeDoc.text = new Automerge.Text();
           changeDoc.title = 'Untitled';
           changeDoc.peers = {};
-          changeDoc.comments = [];
+          changeDoc.comments = {};
 
           // TODO TESTING
           changeDoc.text.insertAt(0, ...['a', 'b', 'c', 'd', 'e', 'f']);
-          changeDoc.comments = [{
-            id: crypto.randomBytes(32),
+          changeDoc.comments[crypto.randomBytes(32)] = {
             start: 0,
             end: 5,
             thread: [{
@@ -101,7 +100,7 @@ class App extends Component {
               author: 'Frank',
               body: 'This is my response'
             }]
-          }];
+          };
         }
         changeDoc.peers[this.props.id] = {
           name: this.state.name
@@ -140,6 +139,32 @@ class App extends Component {
     }
   }
 
+  addComment(id, body) {
+    let doc = this.props.hm.change(this.state.doc, (changeDoc) => {
+      // TODO ideally this uses persistent id or sth
+      let name = changeDoc.peers[this.props.id].name;
+      if (id) {
+        changeDoc.comments[id].thread.push({
+          created: Date.now(),
+          author: name,
+          body: body
+        });
+      } else {
+        let id = crypto.randomBytes(32);
+        changeDoc.comments[id] = {
+          start: 0, // TODO
+          end: 5,
+          thread: [{
+            created: Date.now(),
+            author: name,
+            body: body
+          }]
+        };
+      }
+    });
+    this.setState({ doc: doc });
+  }
+
   updateDocsList() {
     let docs = Object.keys(this.props.hm.docs).map((docId) => {
       return { value: docId, label: this.props.hm.docs[docId].title };
@@ -159,7 +184,7 @@ class App extends Component {
         }
 
         // update comment positions as well
-        changeDoc.comments.forEach((c) => {
+        Object.values(changeDoc.comments).forEach((c) => {
           if (e.caret < c.start + 1) {
             if (e.inserted) {
               c.start++;
@@ -234,6 +259,7 @@ class App extends Component {
             comments={this.state.doc.comments}
             diffs ={this.state.lastDiffs}
             text={this.state.doc.text.join('')}
+            addComment={this.addComment.bind(this)}
             onEdit={this.onEdit.bind(this)}
             onSelect={this.onChangeSelection.bind(this)} />
           <div className='doc-id'>Copy to share: <span>{this.props.hm.getId(this.state.doc)}</span></div>
