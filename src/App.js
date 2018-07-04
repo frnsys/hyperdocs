@@ -97,7 +97,7 @@ class App extends Component {
               author: 'Francis',
               body: 'This is a test comment'
             }, {
-              created: 'flobar',
+              created: Date.now(),
               author: 'Frank',
               body: 'This is my response'
             }]

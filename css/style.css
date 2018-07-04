@@ -83,8 +83,11 @@ textarea, .highlighter {
 
 .doc-editor {
   position: relative;
-  overflow: hidden;
   margin: 1em 0;
+}
+.doc-editor-constrained {
+  overflow: hidden;
+  position: relative;
 }
 
 .peer-label {
@@ -164,6 +167,31 @@ textarea, .highlighter {
 
 .doc-comment {
   background: #eee;
-  border: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
   padding: 0.5em;
+  font-size: 0.9em;
+  min-width: 15em;
+}
+.doc-comment:last-child {
+  border-bottom: none;
+}
+.doc-comment-author {
+  font-size: 0.8em;
+  color: #555;
+  font-weight: bold;
+}
+.doc-comment-datetime {
+  font-size: 0.8em;
+  color: #555;
+}
+.doc-comment-body {
+  margin: 0.5em 0;
+}
+
+.doc-comments {
+  position: absolute;
+  left: -14em;
+  z-index: 1;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+  border: 2px solid #ddd;
 }
