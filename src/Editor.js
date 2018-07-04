@@ -19,7 +19,7 @@ class Highlight extends Component {
     end = <span className='highlight-text'>{end}</span>;
     highlight = <span className='highlight' style={style}><span className='highlight-text'>{highlight}</span></span>;
 
-    return <div className='highlighter' style={{top: -this.props.offsetTop}}>{start}{highlight}{end}</div>;
+    return <div className='highlighter'>{start}{highlight}{end}</div>;
   }
 }
 
@@ -43,17 +43,14 @@ class Peer extends Component {
                     text={this.props.text}
                     start={idx.start}
                     end={idx.end}
-                    color={color}
-                    offsetTop={this.props.offsetTop} />;
+                    color={color} />;
     }
-
-    let top = pos.top - this.props.offsetTop;
 
     let name = peer.name ? peer.name : this.props.id.substr(0, 6);
     return (
       <div>
-        <div className='peer-label' style={{top: top - pos.height, ...style}}>{name}</div>
-        <div className='peer-cursor' style={{top: top, ...style}}></div>
+        <div className='peer-label' style={{top: pos.top - pos.height, ...style}}>{name}</div>
+        <div className='peer-cursor' style={{top: pos.top, ...style}}></div>
         {highlight}
       </div>);
   }
@@ -77,8 +74,7 @@ class Comments extends Component {
       text={this.props.text}
       start={this.props.start}
       end={this.props.end}
-      color={color}
-      offsetTop={this.props.offsetTop} />;
+      color={color} />;
 
     console.log(this.props);
 
@@ -273,27 +269,30 @@ class Editor extends Component {
           body: 'This is my response'
         }]
       }];
+      comments = [];
 
       if (this.state.caretPos && this.state.selectionStart != this.state.selectionEnd) {
-        let top = this.state.caretPos.end.top - this.state.scrollTop - this.state.caretPos.end.height;
+        let top = this.state.caretPos.end.top - this.state.caretPos.end.height;
         addCommentStyle = {display: 'block', top: top, left: this.state.caretPos.end.left};
       }
       main = (
         <div className='doc-editor'>
-          <div className='doc-add-comment' style={addCommentStyle} onClick={() => this.addComment(this.state.selectionStart, this.state.selectionEnd)}>Add comment</div>
+          <div className='doc-overlay' style={{position: 'absolute', top: - this.state.scrollTop}}>
+            <div className='doc-add-comment' style={addCommentStyle} onClick={() => this.addComment(this.state.selectionStart, this.state.selectionEnd)}>Add comment</div>
 
-          {comments.map((c) => {
-            return <Comments key={c.id} text={this.props.text} offsetTop={this.state.scrollTop} {...c} />;
-          })}
+            {comments.map((c) => {
+              return <Comments key={c.id} text={this.props.text} {...c} />;
+            })}
 
-          {Object.keys(this.props.peers).map((id) => {
-            // show peer caret positions
-            if (id === this.props.id) return;
-            let peer = this.props.peers[id];
-            if (!peer.pos) return;
-            let color = this.props.colors[parseInt(id, 16) % this.props.colors.length];
-            return <Peer key={id} id={id} peer={peer} color={color} text={this.props.text} offsetTop={this.state.scrollTop} />;
-          })}
+            {Object.keys(this.props.peers).map((id) => {
+              // show peer caret positions
+              if (id === this.props.id) return;
+              let peer = this.props.peers[id];
+              if (!peer.pos) return;
+              let color = this.props.colors[parseInt(id, 16) % this.props.colors.length];
+              return <Peer key={id} id={id} peer={peer} color={color} text={this.props.text} />;
+            })}
+          </div>
           <textarea
             ref={this.textarea}
             value={this.props.text}
