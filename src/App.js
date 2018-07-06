@@ -117,6 +117,18 @@ class App extends Component {
     }
   }
 
+  export() {
+    let fname = `${this.state.doc.title}.txt`;
+    let text = this.state.doc.text;
+    let el = document.createElement('a');
+    el.setAttribute('href', `data:text/plain;charset=utf-8,${encodeURIComponent(text)}`);
+    el.setAttribute('download', fname);
+    el.style.display = 'none';
+    document.body.appendChild(el);
+    el.click();
+    document.body.removeChild(el);
+  }
+
   render() {
     let main;
     if (this.state.doc) {
@@ -129,6 +141,9 @@ class App extends Component {
           <div>{this.state.doc.nPeers} peers</div>
           <Doc id={this.props.id} doc={this.state.doc} />
           <div className='doc-id'>Copy to share: <span>{this.state.doc.id}</span></div>
+          <div className='doc-misc'>
+            <button onClick={this.export.bind(this)}>Save as text</button>
+          </div>
         </div>
       );
     } else {

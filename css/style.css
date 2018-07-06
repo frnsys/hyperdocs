@@ -232,7 +232,11 @@ textarea {
   bottom: 0;
 }
 
-
 .doc-editor-constrained .doc-overlay {
   pointer-events: none;
+}
+
+.doc-misc {
+  text-align: center;
+  margin: 1em 0;
 }
