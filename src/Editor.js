@@ -1,3 +1,5 @@
+import Peer from './Peer';
+import Highlight from './Highlight';
 import Automerge from 'automerge';
 import React, {Component} from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -10,56 +12,7 @@ function commentForCaret(comments, start, end) {
 }
 
 
-class Highlight extends Component {
-  render() {
-    let text = this.props.text;
-    let start = text.substr(0, this.props.start);
-    let highlight = text.substring(this.props.start, this.props.end);
-    let end = text.substr(this.props.end);
-    let style = {
-      background: this.props.color
-    };
 
-    start = <span className='highlight-text'>{start}</span>;
-    end = <span className='highlight-text'>{end}</span>;
-    highlight = <span className='highlight' style={style}><span className='highlight-text'>{highlight}</span></span>;
-
-    return <div className='highlighter'>{start}{highlight}{end}</div>;
-  }
-}
-
-
-class Peer extends Component {
-  render() {
-    let peer = this.props.peer;
-    let color = this.props.color;
-
-    let pos = peer.pos.end;
-    let style = {
-      position: 'absolute',
-      background: color,
-      left: pos.left
-    };
-
-    let idx = peer.idx;
-    let highlight = '';
-    if (idx.start !== idx.end) {
-      highlight = <Highlight
-                    text={this.props.text}
-                    start={idx.start}
-                    end={idx.end}
-                    color={color} />;
-    }
-
-    let name = peer.name ? peer.name : this.props.id.substr(0, 6);
-    return (
-      <div>
-        <div className='peer-label' style={{top: pos.top - pos.height, ...style}}>{name}</div>
-        <div className='peer-cursor' style={{top: pos.top, ...style}}></div>
-        {highlight}
-      </div>);
-  }
-}
 
 class AddComment extends Component {
   constructor(props) {
@@ -319,13 +272,11 @@ class Editor extends Component {
                   color={color} />;
               })}
 
-              {Object.keys(this.props.peers).map((id) => {
-                // show peer caret positions
-                if (id === this.props.id) return;
-                let peer = this.props.peers[id];
-                if (!peer.pos) return;
-                let color = this.props.colors[parseInt(id, 16) % this.props.colors.length];
-                return <Peer key={id} id={id} peer={peer} color={color} text={this.props.text} />;
+              {Object.values(this.props.peers).map((p) => {
+                if (p.id === this.props.id) return;
+                if (!p.pos) return;
+                console.log(p.id);
+                return <Peer key={p.id} peer={p} text={this.props.text} />;
               })}
             </div>
             <textarea

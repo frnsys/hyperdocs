@@ -106,7 +106,9 @@ class App extends Component {
           };
         }
         changeDoc.peers[this.props.id] = {
-          name: this.state.name
+          id: this.props.id,
+          name: this.state.name,
+          color: this.props.colors[parseInt(this.props.id, 16) % this.props.colors.length]
         };
       });
       this.setState({ doc: changedDoc, peers: this.uniquePeers(doc) });
@@ -129,7 +131,9 @@ class App extends Component {
         let doc = this.props.hm.find(docId);
         doc = this.props.hm.change(doc, (changeDoc) => {
           changeDoc.peers[this.props.id] = {
-            name: this.state.name
+            id: this.props.id,
+            name: this.state.name,
+            color: this.props.colors[parseInt(this.props.id, 16) % this.props.colors.length]
           };
         });
         this.setState({ doc: doc, peers: this.uniquePeers(doc) });
@@ -267,7 +271,6 @@ class App extends Component {
           <div>{this.state.peers.length} peers</div>
           <Editor
             id={this.props.id}
-            colors={this.props.colors}
             peers={this.state.doc.peers}
             comments={this.state.doc.comments}
             diffs ={this.state.lastDiffs}
