@@ -143,6 +143,7 @@ class App extends Component {
   }
 
   addComment(id, body, start, end) {
+    if (!body) return;
     let doc = this.props.hm.change(this.state.doc, (changeDoc) => {
       // TODO ideally this uses persistent id or sth
       let name = changeDoc.peers[this.props.id].name;

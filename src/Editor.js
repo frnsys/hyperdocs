@@ -4,6 +4,11 @@ import ReactMarkdown from 'react-markdown';
 import getCaretCoordinates from 'textarea-caret';
 
 
+// TODO should use a binary tree
+function commentForCaret(comments, start, end) {
+  return comments.find((c) => c.start <= start && c.end >= end);
+}
+
 
 class Highlight extends Component {
   render() {
@@ -96,7 +101,8 @@ class Comments extends Component {
 
     return (
       <div className='doc-comments' style={style}>
-        <button className='doc-comment-resolve' onClick={this.props.resolveComment}>Resolve</button>
+        {this.props.thread.length > 0 &&
+          <button className='doc-comment-resolve' onClick={this.props.resolveComment}>Resolve</button>}
         {this.props.thread.map((c) => {
           return (
             <div key={`${c.author}_${c.created}`} className='doc-comment'>
@@ -181,8 +187,7 @@ class Editor extends Component {
     };
 
     // find focused comment, if any
-    let focusedComment = Object.values(this.props.comments).find(
-      (c) => textarea.selectionStart > c.start && textarea.selectionEnd < c.end);
+    let focusedComment = commentForCaret(Object.values(this.props.comments), textarea.selectionStart, textarea.selectionEnd);
 
     this.setState({
       selectionStart: textarea.selectionStart,
@@ -271,7 +276,12 @@ class Editor extends Component {
       let addComment = '';
       if (this.textarea.current && this.textarea.current.selectionStart !== this.textarea.current.selectionEnd) {
         let top = getCaretCoordinates(this.textarea.current, this.textarea.current.selectionStart).top;
-        addComment = <Comments key='new' top={top} focused={true} thread={[]} addComment={(body) => this.props.addComment(null, body, this.textarea.current.selectionStart, this.textarea.current.selectionEnd)} />;
+        if (!commentForCaret(Object.values(this.props.comments), this.textarea.current.selectionStart, this.textarea.current.selectionEnd)) {
+          addComment = <Comments key='new' top={top} focused={true} thread={[]} addComment={(body) => {
+            this.props.addComment(null, body, this.textarea.current.selectionStart, this.textarea.current.selectionEnd);
+            this.textarea.current.focus();
+          }} />;
+        }
       }
       main = (
         <div className='doc-editor'>
