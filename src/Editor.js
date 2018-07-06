@@ -4,6 +4,31 @@ import ReactMarkdown from 'react-markdown';
 import getCaretCoordinates from 'textarea-caret';
 
 
+// TODO should use a binary tree
+function commentForCaret(comments, start, end) {
+  return comments.find((c) => c.start <= start && c.end >= end);
+}
+
+
+class Highlight extends Component {
+  render() {
+    let text = this.props.text;
+    let start = text.substr(0, this.props.start);
+    let highlight = text.substring(this.props.start, this.props.end);
+    let end = text.substr(this.props.end);
+    let style = {
+      background: this.props.color
+    };
+
+    start = <span className='highlight-text'>{start}</span>;
+    end = <span className='highlight-text'>{end}</span>;
+    highlight = <span className='highlight' style={style}><span className='highlight-text'>{highlight}</span></span>;
+
+    return <div className='highlighter'>{start}{highlight}{end}</div>;
+  }
+}
+
+
 class Peer extends Component {
   render() {
     let peer = this.props.peer;
@@ -19,23 +44,74 @@ class Peer extends Component {
     let idx = peer.idx;
     let highlight = '';
     if (idx.start !== idx.end) {
-      let text = this.props.text;
-      let start = text.substr(0, idx.start);
-      let highlighted = text.substring(idx.start, idx.end);
-      let end = text.substr(idx.end);
-
-      // bleh cleanup
-      highlight = <div className='highlights' style={{top: -this.props.offsetTop}}><span className='highlight-text'>{start}</span><span className='highlight' style={{background: color}}><span className='highlight-text'>{highlighted}</span></span><span className='highlight-text'>{end}</span></div>;
+      highlight = <Highlight
+                    text={this.props.text}
+                    start={idx.start}
+                    end={idx.end}
+                    color={color} />;
     }
-
-    let top = pos.top - this.props.offsetTop;
 
     let name = peer.name ? peer.name : this.props.id.substr(0, 6);
     return (
       <div>
-        <div className='peer-label' style={{top: top - pos.height, ...style}}>{name}</div>
-        <div className='peer-cursor' style={{top: top, ...style}}></div>
+        <div className='peer-label' style={{top: pos.top - pos.height, ...style}}>{name}</div>
+        <div className='peer-cursor' style={{top: pos.top, ...style}}></div>
         {highlight}
+      </div>);
+  }
+}
+
+class AddComment extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      value: ''
+    };
+  }
+
+  addComment() {
+    this.props.addComment(this.state.value);
+
+    // TODO ideally this doesn't happen until
+    // we confirm the comment registered...
+    this.setState({value: ''});
+  }
+
+  render() {
+    return (
+      <div className='doc-comment'>
+        <textarea value={this.state.value} onChange={(ev) => this.setState({value: ev.target.value})} />
+        <button onClick={this.addComment.bind(this)}>Add comment</button>
+      </div>);
+  }
+}
+
+class Comments extends Component {
+  render() {
+    // TODO styling/positioning needs a lot of work
+    let style = {
+      top: this.props.top
+    };
+
+    if (this.props.focused) {
+      style.border = '2px solid #7070ff';
+    } else {
+      style.display = 'none';
+    }
+
+    return (
+      <div className='doc-comments' style={style}>
+        {this.props.thread.length > 0 &&
+          <button className='doc-comment-resolve' onClick={this.props.resolveComment}>Resolve</button>}
+        {this.props.thread.map((c) => {
+          return (
+            <div key={`${c.author}_${c.created}`} className='doc-comment'>
+              <div className='doc-comment-author'>{c.author}</div>
+              <div className='doc-comment-body'>{c.body}</div>
+              <div className='doc-comment-datetime'>On {new Date(c.created).toLocaleString()}</div>
+            </div>);
+        })}
+        <AddComment addComment={this.props.addComment} />
       </div>);
   }
 }
@@ -46,7 +122,8 @@ class Editor extends Component {
     super(props);
     this.state = {
       scrollTop: 0,
-      preview: false
+      preview: false,
+      focusedComment: null
     };
     this.textarea = React.createRef();
     this.preview = React.createRef();
@@ -67,17 +144,17 @@ class Editor extends Component {
       this.props.diffs.forEach((d) => {
         if (d.index < start) {
           if (d.action === 'insert') {
-            start += 1;
+            start++;
           } else if (d.action === 'remove') {
-            start -= 1;
+            start--;
           }
         }
 
         if (d.index < end) {
           if (d.action === 'insert') {
-            end += 1;
+            end++;
           } else if (d.action === 'remove') {
-            end -= 1;
+            end--;
           }
         }
       });
@@ -100,11 +177,6 @@ class Editor extends Component {
     // on new textarea selection/caret movement,
     // update peers
     let textarea = this.textarea.current;
-    this.setState({
-      selectionStart: textarea.selectionStart,
-      selectionEnd: textarea.selectionEnd
-    });
-
     let caretPos = {
       start: getCaretCoordinates(textarea, textarea.selectionStart),
       end: getCaretCoordinates(textarea, textarea.selectionEnd)
@@ -113,6 +185,17 @@ class Editor extends Component {
       start: textarea.selectionStart,
       end: textarea.selectionEnd
     };
+
+    // find focused comment, if any
+    let focusedComment = commentForCaret(Object.values(this.props.comments), textarea.selectionStart, textarea.selectionEnd);
+
+    this.setState({
+      selectionStart: textarea.selectionStart,
+      selectionEnd: textarea.selectionEnd,
+      caretPos: caretPos,
+      focusedComment: focusedComment ? focusedComment.id : null
+    });
+
     this.props.onSelect(caretPos, caretIdx);
   }
 
@@ -190,23 +273,70 @@ class Editor extends Component {
         <div className='doc-preview-label'>Preview</div>
       </div>;
     } else {
+      let addComment = '';
+      if (this.textarea.current && this.textarea.current.selectionStart !== this.textarea.current.selectionEnd) {
+        let top = getCaretCoordinates(this.textarea.current, this.textarea.current.selectionStart).top;
+        if (!commentForCaret(Object.values(this.props.comments), this.textarea.current.selectionStart, this.textarea.current.selectionEnd)) {
+          addComment = <Comments key='new' top={top} focused={true} thread={[]} addComment={(body) => {
+            this.props.addComment(null, body, this.textarea.current.selectionStart, this.textarea.current.selectionEnd);
+            this.textarea.current.focus();
+          }} />;
+        }
+      }
       main = (
         <div className='doc-editor'>
-          {Object.keys(this.props.peers).map((id) => {
-            // show peer caret positions
-            if (id === this.props.id) return;
-            let peer = this.props.peers[id];
-            if (!peer.pos) return;
-            let color = this.props.colors[parseInt(id, 16) % this.props.colors.length];
-            return <Peer key={id} id={id} peer={peer} color={color} text={this.props.text} offsetTop={this.state.scrollTop} />;
-          })}
-          <textarea
-            ref={this.textarea}
-            value={this.props.text}
-            onKeyDown={this.onKeyPress.bind(this)}
-            onSelect={this.onSelect.bind(this)}
-            onScroll={this.onScroll.bind(this)}
-            onChange={this.onChange.bind(this)}></textarea>
+          <div className='doc-overlay' style={{top: - this.state.scrollTop}}>
+            {Object.keys(this.props.comments).map((id) => {
+              let c = this.props.comments[id];
+              if (c.resolved) return;
+
+              let top = 0;
+              if (this.textarea.current) {
+                top = getCaretCoordinates(this.textarea.current, c.start).top;
+              }
+              return <Comments key={id}
+                      top={top}
+                      resolveComment={() => this.props.resolveComment(id)}
+                      addComment={(body) => this.props.addComment(id, body)}
+                      focused={id === this.state.focusedComment}
+                      thread={c.thread} />;
+            })}
+            {addComment}
+          </div>
+          <div className='doc-editor-constrained'>
+            <div className='doc-overlay' style={{position: 'absolute', top: - this.state.scrollTop}}>
+              {Object.keys(this.props.comments).map((id) => {
+                // TODO this could be based on thread author,
+                // or fixed for all comments
+                let color = 'blue';
+                let c = this.props.comments[id];
+                if (c.resolved) return;
+                return <Highlight
+                  key={id}
+                  text={this.props.text}
+                  start={c.start}
+                  end={c.end}
+                  color={color} />;
+              })}
+
+              {Object.keys(this.props.peers).map((id) => {
+                // show peer caret positions
+                if (id === this.props.id) return;
+                let peer = this.props.peers[id];
+                if (!peer.pos) return;
+                let color = this.props.colors[parseInt(id, 16) % this.props.colors.length];
+                return <Peer key={id} id={id} peer={peer} color={color} text={this.props.text} />;
+              })}
+            </div>
+            <textarea
+              ref={this.textarea}
+              value={this.props.text}
+              className='doc-editor-textarea'
+              onKeyDown={this.onKeyPress.bind(this)}
+              onSelect={this.onSelect.bind(this)}
+              onScroll={this.onScroll.bind(this)}
+              onChange={this.onChange.bind(this)}></textarea>
+          </div>
         </div>);
     }
 

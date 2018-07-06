@@ -1,4 +1,5 @@
 import Editor from './Editor';
+import crypto from 'crypto';
 import InlineEditable from './InlineEditable';
 import { Creatable } from 'react-select';
 import 'react-select/dist/react-select.css';
@@ -19,7 +20,7 @@ class App extends Component {
     super(props);
     this.state = {
       doc: null,
-      name: '',
+      name: props.id.substr(0, 6),
       peers: [],
       docs: [],
       peerIds: {},
@@ -83,6 +84,26 @@ class App extends Component {
           changeDoc.text = new Automerge.Text();
           changeDoc.title = 'Untitled';
           changeDoc.peers = {};
+          changeDoc.comments = {};
+
+          // TODO TESTING
+          let id = crypto.randomBytes(32).toString('hex');
+          changeDoc.text.insertAt(0, ...['a', 'b', 'c', 'd', 'e', 'f']);
+          changeDoc.comments[id] = {
+            id: id,
+            start: 0,
+            end: 5,
+            resolved: false,
+            thread: [{
+              created: Date.now(),
+              author: 'Francis',
+              body: 'This is a test comment'
+            }, {
+              created: Date.now(),
+              author: 'Frank',
+              body: 'This is my response'
+            }]
+          };
         }
         changeDoc.peers[this.props.id] = {
           name: this.state.name
@@ -121,6 +142,42 @@ class App extends Component {
     }
   }
 
+  addComment(id, body, start, end) {
+    if (!body) return;
+    let doc = this.props.hm.change(this.state.doc, (changeDoc) => {
+      // TODO ideally this uses persistent id or sth
+      let name = changeDoc.peers[this.props.id].name;
+      if (id) {
+        changeDoc.comments[id].thread.push({
+          created: Date.now(),
+          author: name,
+          body: body
+        });
+      } else {
+        let id = crypto.randomBytes(32).toString('hex');
+        changeDoc.comments[id] = {
+          id: id,
+          start: start,
+          end: end,
+          resolved: false,
+          thread: [{
+            created: Date.now(),
+            author: name,
+            body: body
+          }]
+        };
+      }
+    });
+    this.setState({ doc: doc });
+  }
+
+  resolveComment(id) {
+    let doc = this.props.hm.change(this.state.doc, (changeDoc) => {
+      changeDoc.comments[id].resolved = true;
+    });
+    this.setState({ doc: doc });
+  }
+
   updateDocsList() {
     let docs = Object.keys(this.props.hm.docs).map((docId) => {
       return { value: docId, label: this.props.hm.docs[docId].title };
@@ -138,6 +195,25 @@ class App extends Component {
             changeDoc.text.deleteAt(e.caret);
           }
         }
+
+        // update comment positions as well
+        Object.values(changeDoc.comments).forEach((c) => {
+          if (e.caret < c.start + 1) {
+            if (e.inserted) {
+              c.start++;
+            } else {
+              c.start--;
+            }
+          }
+
+          if (e.caret < c.end) {
+            if (e.inserted) {
+              c.end++;
+            } else {
+              c.end--;
+            }
+          }
+        });
       });
     });
     this.setState({ doc });
@@ -193,8 +269,11 @@ class App extends Component {
             id={this.props.id}
             colors={this.props.colors}
             peers={this.state.doc.peers}
+            comments={this.state.doc.comments}
             diffs ={this.state.lastDiffs}
             text={this.state.doc.text.join('')}
+            addComment={this.addComment.bind(this)}
+            resolveComment={this.resolveComment.bind(this)}
             onEdit={this.onEdit.bind(this)}
             onSelect={this.onChangeSelection.bind(this)} />
           <div className='doc-id'>Copy to share: <span>{this.props.hm.getId(this.state.doc)}</span></div>

@@ -38,12 +38,16 @@ input[type=text] {
 
 textarea {
   width: 100%;
+  padding: 0.5em;
+  display: block;
+}
+.doc-editor-textarea {
   min-height: 50vh;
 }
-textarea, .highlights {
+.doc-editor-textarea, .highlighter {
   padding: 1em;
 }
-.highlights {
+.highlighter {
   position: absolute;
   top: 0;
   right: 0;
@@ -82,8 +86,11 @@ textarea, .highlights {
 
 .doc-editor {
   position: relative;
-  overflow: hidden;
   margin: 1em 0;
+}
+.doc-editor-constrained {
+  overflow: hidden;
+  position: relative;
 }
 
 .peer-label {
@@ -143,4 +150,89 @@ textarea, .highlights {
 }
 .Select-placeholder {
   line-height: 26px !important;
+}
+
+.doc-add-comment {
+  position: absolute;
+  font-size: 0.6em;
+  background: blue;
+  background: #d8eafd;
+  color: #000;
+  padding: 0.3em 0.3em 0.1em 0.3em;
+  cursor: pointer;
+  border: 1px solid #becede;
+  border-radius: 0.2em;
+  z-index: 1;
+}
+.doc-add-comment:hover {
+  background: #cfe4fc;
+}
+
+.doc-comment {
+  background: #eee;
+  border-bottom: 1px solid #ddd;
+  padding: 0.5em;
+  font-size: 0.9em;
+  width: 15em;
+  word-break: break-all;
+}
+.doc-comment:last-child {
+  border-bottom: none;
+}
+.doc-comment-author {
+  font-size: 0.8em;
+  color: #555;
+  font-weight: bold;
+}
+.doc-comment-datetime {
+  font-size: 0.8em;
+  color: #555;
+}
+.doc-comment-body {
+  margin: 0.5em 0;
+}
+
+.doc-comments {
+  position: absolute;
+  left: -14em;
+  z-index: 1;
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+  border: 2px solid #ddd;
+}
+
+.doc-comment textarea {
+  min-height: 5em;
+}
+
+.doc-comment-resolve {
+  position: absolute;
+  font-size: 0.75em;
+  right: 0.25em;
+  top: 0.25em;
+  border: 1px solid #ccc;
+  background: #e5e5e5;
+}
+.doc-comment-resolve:hover {
+  background: #dadada;
+}
+
+.doc-comment button {
+  width: 100%;
+  padding: 0.5em;
+  background: #7070ff;
+  color: #fff;
+  border-radius: 0 0 0.2em 0.2em;
+}
+
+.doc-overlay {
+  position: 'absolute';
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+
+.doc-editor-constrained .doc-overlay {
+  pointer-events: none;
 }
