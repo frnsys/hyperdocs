@@ -4,9 +4,35 @@ import Comments from './Comments';
 import Highlight from './Highlight';
 import React, {Component} from 'react';
 
-function commentForCaret(comments, start, end) {
-  return comments.find((c) => c.start <= start && c.end >= end);
+
+class ImageUpload extends Component {
+  constructor(props) {
+    super(props);
+    this.input = React.createRef();
+  }
+
+  handleFileUpload(ev) {
+    let files = ev.target.files;
+    if (files && files[0]) {
+      let file = files[0];
+      let validTypes = ['image/gif', 'image/jpeg', 'image/png'];
+      if (validTypes.indexOf(file.type) < 0) return;
+      this.props.onImage(file);
+    }
+  }
+
+  render() {
+    return <div>
+      <button onClick={() => this.input.current.click()}>Upload image</button>
+      <input
+        type='file'
+        ref={this.input}
+        style={{display: 'none'}}
+        onChange={this.handleFileUpload.bind(this)} />
+    </div>;
+  }
 }
+
 
 class Doc extends Component {
   constructor(props) {
@@ -35,6 +61,14 @@ class Doc extends Component {
     });
 
     this.props.doc.setSelection(this.props.id, caretPos, caretIdx);
+  }
+
+  onImage(file) {
+    let reader = new FileReader();
+    reader.addEventListener('load', (e) => {
+      this.props.doc.addImage(e.target.result);
+    });
+    reader.readAsDataURL(file);
   }
 
   render() {
@@ -81,6 +115,14 @@ class Doc extends Component {
           onScroll={this.onScroll.bind(this)}
           onSelect={this.onSelect.bind(this)}
           onEdit={(edits) => this.props.doc.editText(edits)} />
+        <ImageUpload onImage={this.onImage.bind(this)} />
+        <div>
+          <h2>Images</h2>
+          {Object.keys(this.props.doc.images).map((id) => {
+            let b64 = this.props.doc.images[id];
+            return <img key={id} src={b64} />;
+          })}
+        </div>
       </div>
       </div>
     </div>;
