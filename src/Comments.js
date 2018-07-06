@@ -30,7 +30,9 @@ class AddComment extends Component {
   render() {
     return (
       <div className='doc-comment'>
-        <textarea value={this.state.value} onChange={(ev) => this.setState({value: ev.target.value})} />
+        <textarea
+          value={this.state.value}
+          onChange={(ev) => this.setState({value: ev.target.value})} />
         <button onClick={this.addComment.bind(this)}>Add comment</button>
       </div>);
   }
@@ -52,11 +54,9 @@ class Comments extends Component {
     return (
       <div className='doc-comments' style={style}>
         {this.props.thread.length > 0 &&
-          <button className='doc-comment-resolve' onClick={this.props.resolveComment}>Resolve</button>}
-        {this.props.thread.map((c) => {
-          return <Comment key={c.id} comment={c} />;
-        })}
-        <AddComment addComment={this.props.addComment} />
+          <button className='doc-comment-resolve' onClick={this.props.resolve}>Resolve</button>}
+        {this.props.thread.map((c) => <Comment key={c.id} comment={c} />)}
+        <AddComment addComment={(body) => this.props.add(this.props.id, body)} />
       </div>);
   }
 }

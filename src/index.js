@@ -1,11 +1,12 @@
 import App from './App';
 import React from 'react';
+import HyperDoc from './HyperDoc';
 import Hypermerge from 'hypermerge';
 import ram from 'random-access-memory';
 import {render} from 'react-dom';
 
-const path = 'docs';
-// const path = ram;
+// const path = 'docs';
+const path = ram;
 
 const colors = [
   '#1313ef',
@@ -27,6 +28,8 @@ hm.once('ready', (hm) => {
   let id = hm.swarm.id.toString('hex');
   console.log(`My ID: ${id}`);
 
+  // ugh hacky
+  HyperDoc.hm = hm;
   let main = document.getElementById('main');
   render(<App hm={hm} id={id} colors={colors} />, main);
 });

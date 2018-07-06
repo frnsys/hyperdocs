@@ -1,27 +1,15 @@
-import Peer from './Peer';
-import Comments from './Comments';
-import Highlight from './Highlight';
-import Automerge from 'automerge';
 import React, {Component} from 'react';
-import ReactMarkdown from 'react-markdown';
 import getCaretCoordinates from 'textarea-caret';
-
-// TODO should use a binary tree
-function commentForCaret(comments, start, end) {
-  return comments.find((c) => c.start <= start && c.end >= end);
-}
 
 
 class Editor extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      scrollTop: 0,
-      preview: false,
-      focusedComment: null
+      selectionStart: 0,
+      selectionEnd: 0
     };
     this.textarea = React.createRef();
-    this.preview = React.createRef();
   }
 
   componentDidMount() {
@@ -57,15 +45,6 @@ class Editor extends Component {
       this.textarea.current.selectionEnd = end;
       this.onSelect();
     }
-
-    // focus textarea/preview if just changed
-    if (prevState.preview !== this.state.preview) {
-      if (this.state.preview) {
-        this.preview.current.focus();
-      } else {
-        this.textarea.current.focus();
-      }
-    }
   }
 
   onSelect(ev) {
@@ -81,14 +60,10 @@ class Editor extends Component {
       end: textarea.selectionEnd
     };
 
-    // find focused comment, if any
-    let focusedComment = commentForCaret(Object.values(this.props.comments), textarea.selectionStart, textarea.selectionEnd);
-
     this.setState({
       selectionStart: textarea.selectionStart,
       selectionEnd: textarea.selectionEnd,
-      caretPos: caretPos,
-      focusedComment: focusedComment ? focusedComment.id : null
+      caretPos: caretPos
     });
 
     this.props.onSelect(caretPos, caretIdx);
@@ -142,98 +117,22 @@ class Editor extends Component {
     this.props.onEdit(edits);
   }
 
-  onKeyPress(ev) {
-    // toggle markdown preview mode
-    if (ev.key === 'p' && ev.ctrlKey) {
-      this.setState({ preview: !this.state.preview });
-      ev.preventDefault();
-    }
+  onScroll() {
+    this.props.onScroll(this.textarea.current.scrollTop);
   }
 
-  onScroll() {
-    this.setState({
-      scrollTop: this.textarea.current.scrollTop
-    });
+  focus() {
+    this.textarea.current.focus();
   }
 
   render() {
-    let main;
-    if (this.state.preview) {
-      main = <div
-        ref={this.preview}
-        className='doc-preview'
-        tabIndex='-1'
-        onKeyDown={this.onKeyPress.bind(this)}>
-        <ReactMarkdown source={this.props.text} />
-        <div className='doc-preview-label'>Preview</div>
-      </div>;
-    } else {
-      let addComment = '';
-      if (this.textarea.current && this.textarea.current.selectionStart !== this.textarea.current.selectionEnd) {
-        let top = getCaretCoordinates(this.textarea.current, this.textarea.current.selectionStart).top;
-        if (!commentForCaret(Object.values(this.props.comments), this.textarea.current.selectionStart, this.textarea.current.selectionEnd)) {
-          addComment = <Comments top={top} focused={true} thread={[]} addComment={(body) => {
-            this.props.addComment(null, body, this.textarea.current.selectionStart, this.textarea.current.selectionEnd);
-            this.textarea.current.focus();
-          }} />;
-        }
-      }
-      main = (
-        <div className='doc-editor'>
-          <div className='doc-overlay' style={{top: - this.state.scrollTop}}>
-            {Object.keys(this.props.comments).map((id) => {
-              let c = this.props.comments[id];
-              if (c.resolved) return;
-
-              let top = 0;
-              if (this.textarea.current) {
-                top = getCaretCoordinates(this.textarea.current, c.start).top;
-              }
-              return <Comments key={id}
-                      top={top}
-                      resolveComment={() => this.props.resolveComment(id)}
-                      addComment={(body) => this.props.addComment(id, body)}
-                      focused={id === this.state.focusedComment}
-                      thread={c.thread} />;
-            })}
-            {addComment}
-          </div>
-          <div className='doc-editor-constrained'>
-            <div className='doc-overlay' style={{position: 'absolute', top: - this.state.scrollTop}}>
-              {Object.keys(this.props.comments).map((id) => {
-                // TODO this could be based on thread author,
-                // or fixed for all comments
-                let color = 'blue';
-                let c = this.props.comments[id];
-                if (c.resolved) return;
-                return <Highlight
-                  key={id}
-                  text={this.props.text}
-                  start={c.start}
-                  end={c.end}
-                  color={color} />;
-              })}
-
-              {Object.values(this.props.peers).map((p) => {
-                if (p.id === this.props.id) return;
-                if (!p.pos) return;
-                console.log(p.id);
-                return <Peer key={p.id} peer={p} text={this.props.text} />;
-              })}
-            </div>
-            <textarea
-              ref={this.textarea}
-              value={this.props.text}
-              className='doc-editor-textarea'
-              onKeyDown={this.onKeyPress.bind(this)}
-              onSelect={this.onSelect.bind(this)}
-              onScroll={this.onScroll.bind(this)}
-              onChange={this.onChange.bind(this)}></textarea>
-          </div>
-        </div>);
-    }
-
-    return <div id='editor'>{main}</div>;
+    return <textarea
+      ref={this.textarea}
+      value={this.props.text}
+      className='doc-editor-textarea'
+      onSelect={this.onSelect.bind(this)}
+      onScroll={this.onScroll.bind(this)}
+      onChange={this.onChange.bind(this)}></textarea>;
   }
 }
 
