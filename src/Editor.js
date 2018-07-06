@@ -1,132 +1,15 @@
-import Automerge from 'automerge';
 import React, {Component} from 'react';
-import ReactMarkdown from 'react-markdown';
 import getCaretCoordinates from 'textarea-caret';
-
-
-// TODO should use a binary tree
-function commentForCaret(comments, start, end) {
-  return comments.find((c) => c.start <= start && c.end >= end);
-}
-
-
-class Highlight extends Component {
-  render() {
-    let text = this.props.text;
-    let start = text.substr(0, this.props.start);
-    let highlight = text.substring(this.props.start, this.props.end);
-    let end = text.substr(this.props.end);
-    let style = {
-      background: this.props.color
-    };
-
-    start = <span className='highlight-text'>{start}</span>;
-    end = <span className='highlight-text'>{end}</span>;
-    highlight = <span className='highlight' style={style}><span className='highlight-text'>{highlight}</span></span>;
-
-    return <div className='highlighter'>{start}{highlight}{end}</div>;
-  }
-}
-
-
-class Peer extends Component {
-  render() {
-    let peer = this.props.peer;
-    let color = this.props.color;
-
-    let pos = peer.pos.end;
-    let style = {
-      position: 'absolute',
-      background: color,
-      left: pos.left
-    };
-
-    let idx = peer.idx;
-    let highlight = '';
-    if (idx.start !== idx.end) {
-      highlight = <Highlight
-                    text={this.props.text}
-                    start={idx.start}
-                    end={idx.end}
-                    color={color} />;
-    }
-
-    let name = peer.name ? peer.name : this.props.id.substr(0, 6);
-    return (
-      <div>
-        <div className='peer-label' style={{top: pos.top - pos.height, ...style}}>{name}</div>
-        <div className='peer-cursor' style={{top: pos.top, ...style}}></div>
-        {highlight}
-      </div>);
-  }
-}
-
-class AddComment extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      value: ''
-    };
-  }
-
-  addComment() {
-    this.props.addComment(this.state.value);
-
-    // TODO ideally this doesn't happen until
-    // we confirm the comment registered...
-    this.setState({value: ''});
-  }
-
-  render() {
-    return (
-      <div className='doc-comment'>
-        <textarea value={this.state.value} onChange={(ev) => this.setState({value: ev.target.value})} />
-        <button onClick={this.addComment.bind(this)}>Add comment</button>
-      </div>);
-  }
-}
-
-class Comments extends Component {
-  render() {
-    // TODO styling/positioning needs a lot of work
-    let style = {
-      top: this.props.top
-    };
-
-    if (this.props.focused) {
-      style.border = '2px solid #7070ff';
-    } else {
-      style.display = 'none';
-    }
-
-    return (
-      <div className='doc-comments' style={style}>
-        {this.props.thread.length > 0 &&
-          <button className='doc-comment-resolve' onClick={this.props.resolveComment}>Resolve</button>}
-        {this.props.thread.map((c) => {
-          return (
-            <div key={`${c.author}_${c.created}`} className='doc-comment'>
-              <div className='doc-comment-author'>{c.author}</div>
-              <div className='doc-comment-body'>{c.body}</div>
-              <div className='doc-comment-datetime'>On {new Date(c.created).toLocaleString()}</div>
-            </div>);
-        })}
-        <AddComment addComment={this.props.addComment} />
-      </div>);
-  }
-}
 
 
 class Editor extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      scrollTop: 0,
-      preview: false,
-      focusedComment: null
+      selectionStart: 0,
+      selectionEnd: 0
     };
     this.textarea = React.createRef();
-    this.preview = React.createRef();
   }
 
   componentDidMount() {
@@ -162,15 +45,6 @@ class Editor extends Component {
       this.textarea.current.selectionEnd = end;
       this.onSelect();
     }
-
-    // focus textarea/preview if just changed
-    if (prevState.preview !== this.state.preview) {
-      if (this.state.preview) {
-        this.preview.current.focus();
-      } else {
-        this.textarea.current.focus();
-      }
-    }
   }
 
   onSelect(ev) {
@@ -186,14 +60,10 @@ class Editor extends Component {
       end: textarea.selectionEnd
     };
 
-    // find focused comment, if any
-    let focusedComment = commentForCaret(Object.values(this.props.comments), textarea.selectionStart, textarea.selectionEnd);
-
     this.setState({
       selectionStart: textarea.selectionStart,
       selectionEnd: textarea.selectionEnd,
-      caretPos: caretPos,
-      focusedComment: focusedComment ? focusedComment.id : null
+      caretPos: caretPos
     });
 
     this.props.onSelect(caretPos, caretIdx);
@@ -247,100 +117,22 @@ class Editor extends Component {
     this.props.onEdit(edits);
   }
 
-  onKeyPress(ev) {
-    // toggle markdown preview mode
-    if (ev.key === 'p' && ev.ctrlKey) {
-      this.setState({ preview: !this.state.preview });
-      ev.preventDefault();
-    }
+  onScroll() {
+    this.props.onScroll(this.textarea.current.scrollTop);
   }
 
-  onScroll() {
-    this.setState({
-      scrollTop: this.textarea.current.scrollTop
-    });
+  focus() {
+    this.textarea.current.focus();
   }
 
   render() {
-    let main;
-    if (this.state.preview) {
-      main = <div
-        ref={this.preview}
-        className='doc-preview'
-        tabIndex='-1'
-        onKeyDown={this.onKeyPress.bind(this)}>
-        <ReactMarkdown source={this.props.text} />
-        <div className='doc-preview-label'>Preview</div>
-      </div>;
-    } else {
-      let addComment = '';
-      if (this.textarea.current && this.textarea.current.selectionStart !== this.textarea.current.selectionEnd) {
-        let top = getCaretCoordinates(this.textarea.current, this.textarea.current.selectionStart).top;
-        if (!commentForCaret(Object.values(this.props.comments), this.textarea.current.selectionStart, this.textarea.current.selectionEnd)) {
-          addComment = <Comments key='new' top={top} focused={true} thread={[]} addComment={(body) => {
-            this.props.addComment(null, body, this.textarea.current.selectionStart, this.textarea.current.selectionEnd);
-            this.textarea.current.focus();
-          }} />;
-        }
-      }
-      main = (
-        <div className='doc-editor'>
-          <div className='doc-overlay' style={{top: - this.state.scrollTop}}>
-            {Object.keys(this.props.comments).map((id) => {
-              let c = this.props.comments[id];
-              if (c.resolved) return;
-
-              let top = 0;
-              if (this.textarea.current) {
-                top = getCaretCoordinates(this.textarea.current, c.start).top;
-              }
-              return <Comments key={id}
-                      top={top}
-                      resolveComment={() => this.props.resolveComment(id)}
-                      addComment={(body) => this.props.addComment(id, body)}
-                      focused={id === this.state.focusedComment}
-                      thread={c.thread} />;
-            })}
-            {addComment}
-          </div>
-          <div className='doc-editor-constrained'>
-            <div className='doc-overlay' style={{position: 'absolute', top: - this.state.scrollTop}}>
-              {Object.keys(this.props.comments).map((id) => {
-                // TODO this could be based on thread author,
-                // or fixed for all comments
-                let color = 'blue';
-                let c = this.props.comments[id];
-                if (c.resolved) return;
-                return <Highlight
-                  key={id}
-                  text={this.props.text}
-                  start={c.start}
-                  end={c.end}
-                  color={color} />;
-              })}
-
-              {Object.keys(this.props.peers).map((id) => {
-                // show peer caret positions
-                if (id === this.props.id) return;
-                let peer = this.props.peers[id];
-                if (!peer.pos) return;
-                let color = this.props.colors[parseInt(id, 16) % this.props.colors.length];
-                return <Peer key={id} id={id} peer={peer} color={color} text={this.props.text} />;
-              })}
-            </div>
-            <textarea
-              ref={this.textarea}
-              value={this.props.text}
-              className='doc-editor-textarea'
-              onKeyDown={this.onKeyPress.bind(this)}
-              onSelect={this.onSelect.bind(this)}
-              onScroll={this.onScroll.bind(this)}
-              onChange={this.onChange.bind(this)}></textarea>
-          </div>
-        </div>);
-    }
-
-    return <div id='editor'>{main}</div>;
+    return <textarea
+      ref={this.textarea}
+      value={this.props.text}
+      className='doc-editor-textarea'
+      onSelect={this.onSelect.bind(this)}
+      onScroll={this.onScroll.bind(this)}
+      onChange={this.onChange.bind(this)}></textarea>;
   }
 }
 
