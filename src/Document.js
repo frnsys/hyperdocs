@@ -4,6 +4,11 @@ import Comments from './Comments';
 import Highlight from './Highlight';
 import React, {Component} from 'react';
 
+function isImage(file) {
+  let validTypes = ['image/gif', 'image/jpeg', 'image/png'];
+  return validTypes.indexOf(file.type) >= 0;
+}
+
 
 class ImageUpload extends Component {
   constructor(props) {
@@ -15,9 +20,9 @@ class ImageUpload extends Component {
     let files = ev.target.files;
     if (files && files[0]) {
       let file = files[0];
-      let validTypes = ['image/gif', 'image/jpeg', 'image/png'];
-      if (validTypes.indexOf(file.type) < 0) return;
-      this.props.onImage(file);
+      if (isImage(file)) {
+        this.props.onImage(file);
+      }
     }
   }
 
@@ -71,6 +76,13 @@ class Doc extends Component {
     reader.readAsDataURL(file);
   }
 
+  onDrop(ev) {
+    ev.stopPropagation();
+    ev.preventDefault();
+    let files = Array.from(ev.dataTransfer.files);
+    files.filter((f) => isImage(f)).map((f) => this.onImage(f));
+  }
+
   render() {
     let text = this.props.doc.text;
     let peers = Object.values(this.props.doc.peers).filter((p) => p.id !== this.props.id && p.pos);
@@ -86,7 +98,7 @@ class Doc extends Component {
     }} />;
 
     return <div id='editor'>
-      <div className='doc-editor'>
+      <div className='doc-editor' onDrop={this.onDrop.bind(this)}>
         <div className='doc-overlay' style={{top: -this.state.scrollTop}}>
           {activeComments.map((c) => {
             let focused = c.id === this.state.focusedComment;
