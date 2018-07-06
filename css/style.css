@@ -9,6 +9,10 @@ html, body {
   background: pink;
 }
 
+img {
+  max-width: 100%;
+}
+
 main {
   padding: 2em;
   max-width: 720px;

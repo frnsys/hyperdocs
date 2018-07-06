@@ -25,6 +25,10 @@ function DUMMY(changeDoc) {
 }
 
 
+function makeId() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
 
 class HyperDoc extends EventEmitter {
   constructor(doc) {
@@ -70,6 +74,7 @@ class HyperDoc extends EventEmitter {
           changeDoc.title = 'Untitled';
           changeDoc.peers = {};
           changeDoc.comments = {};
+          changeDoc.images = {};
 
           // TODO TESTING
           DUMMY(changeDoc);
@@ -111,6 +116,10 @@ class HyperDoc extends EventEmitter {
 
   get comments() {
     return this.doc.comments;
+  }
+
+  get images() {
+    return this.doc.images;
   }
 
   _changeDoc(changeFn) {
@@ -195,7 +204,7 @@ class HyperDoc extends EventEmitter {
     this._changeDoc((changeDoc) => {
       // TODO ideally this uses persistent id or sth
       let name = changeDoc.peers[peerId].name;
-      let commentId = crypto.randomBytes(32).toString('hex');
+      let commentId = makeId();
       let comment = {
         id: commentId,
         created: Date.now(),
@@ -205,7 +214,7 @@ class HyperDoc extends EventEmitter {
       if (threadId) {
         changeDoc.comments[threadId].thread.push(comment);
       } else {
-        threadId = crypto.randomBytes(32).toString('hex');
+        threadId = makeId();
         changeDoc.comments[threadId] = {
           id: threadId,
           start: start,
@@ -220,6 +229,15 @@ class HyperDoc extends EventEmitter {
   resolveComment(threadId) {
     this._changeDoc((changeDoc) => {
       changeDoc.comments[threadId].resolved = true;
+    });
+  }
+
+  addImage(data) {
+    let id = makeId();
+    this._changeDoc((changeDoc) => {
+      console.log(`added image ${id}`);
+      changeDoc.images[id] = data;
+      console.log(this.hm.core.archiver);
     });
   }
 }
