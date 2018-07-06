@@ -95,10 +95,13 @@ class App extends Component {
             end: 5,
             resolved: false,
             thread: [{
+              id: crypto.randomBytes(32).toString('hex'),
               created: Date.now(),
               author: 'Francis',
               body: 'This is a test comment'
             }, {
+              id: crypto.randomBytes(32).toString('hex'),
+              created: Date.now(),
               created: Date.now(),
               author: 'Frank',
               body: 'This is my response'
@@ -153,6 +156,7 @@ class App extends Component {
       let name = changeDoc.peers[this.props.id].name;
       if (id) {
         changeDoc.comments[id].thread.push({
+          id: crypto.randomBytes(32).toString('hex'),
           created: Date.now(),
           author: name,
           body: body
@@ -165,6 +169,7 @@ class App extends Component {
           end: end,
           resolved: false,
           thread: [{
+            id: crypto.randomBytes(32).toString('hex'),
             created: Date.now(),
             author: name,
             body: body

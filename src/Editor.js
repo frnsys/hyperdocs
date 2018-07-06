@@ -1,72 +1,14 @@
 import Peer from './Peer';
+import Comments from './Comments';
 import Highlight from './Highlight';
 import Automerge from 'automerge';
 import React, {Component} from 'react';
 import ReactMarkdown from 'react-markdown';
 import getCaretCoordinates from 'textarea-caret';
 
-
 // TODO should use a binary tree
 function commentForCaret(comments, start, end) {
   return comments.find((c) => c.start <= start && c.end >= end);
-}
-
-
-
-
-class AddComment extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      value: ''
-    };
-  }
-
-  addComment() {
-    this.props.addComment(this.state.value);
-
-    // TODO ideally this doesn't happen until
-    // we confirm the comment registered...
-    this.setState({value: ''});
-  }
-
-  render() {
-    return (
-      <div className='doc-comment'>
-        <textarea value={this.state.value} onChange={(ev) => this.setState({value: ev.target.value})} />
-        <button onClick={this.addComment.bind(this)}>Add comment</button>
-      </div>);
-  }
-}
-
-class Comments extends Component {
-  render() {
-    // TODO styling/positioning needs a lot of work
-    let style = {
-      top: this.props.top
-    };
-
-    if (this.props.focused) {
-      style.border = '2px solid #7070ff';
-    } else {
-      style.display = 'none';
-    }
-
-    return (
-      <div className='doc-comments' style={style}>
-        {this.props.thread.length > 0 &&
-          <button className='doc-comment-resolve' onClick={this.props.resolveComment}>Resolve</button>}
-        {this.props.thread.map((c) => {
-          return (
-            <div key={`${c.author}_${c.created}`} className='doc-comment'>
-              <div className='doc-comment-author'>{c.author}</div>
-              <div className='doc-comment-body'>{c.body}</div>
-              <div className='doc-comment-datetime'>On {new Date(c.created).toLocaleString()}</div>
-            </div>);
-        })}
-        <AddComment addComment={this.props.addComment} />
-      </div>);
-  }
 }
 
 
@@ -230,7 +172,7 @@ class Editor extends Component {
       if (this.textarea.current && this.textarea.current.selectionStart !== this.textarea.current.selectionEnd) {
         let top = getCaretCoordinates(this.textarea.current, this.textarea.current.selectionStart).top;
         if (!commentForCaret(Object.values(this.props.comments), this.textarea.current.selectionStart, this.textarea.current.selectionEnd)) {
-          addComment = <Comments key='new' top={top} focused={true} thread={[]} addComment={(body) => {
+          addComment = <Comments top={top} focused={true} thread={[]} addComment={(body) => {
             this.props.addComment(null, body, this.textarea.current.selectionStart, this.textarea.current.selectionEnd);
             this.textarea.current.focus();
           }} />;
