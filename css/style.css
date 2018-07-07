@@ -240,3 +240,7 @@ textarea {
   text-align: center;
   margin: 1em 0;
 }
+
+.public-DraftEditor-content {
+  padding: 1em;
+}

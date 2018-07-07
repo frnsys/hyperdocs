@@ -31,7 +31,9 @@
   "dependencies": {
     "automerge": "^0.7.11",
     "datland-swarm-defaults": "^1.0.2",
+    "draft-js": "^0.10.5",
     "hypermerge": "git://github.com/frnsys/hypermerge.git#fix-hypercore-crypto",
+    "immutability-helper": "^2.7.1",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-markdown": "^3.3.4",

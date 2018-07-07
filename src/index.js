@@ -5,6 +5,8 @@ import Hypermerge from 'hypermerge';
 import ram from 'random-access-memory';
 import {render} from 'react-dom';
 
+import RichEditor from './RichEditor';
+
 // const path = 'docs';
 const path = ram;
 
@@ -22,14 +24,18 @@ const hm = new Hypermerge({
   path: path
 });
 
-hm.once('ready', (hm) => {
-  hm.joinSwarm({utp: false}); // getting an error with utp?
+// hm.once('ready', (hm) => {
+//   hm.joinSwarm({utp: false}); // getting an error with utp?
 
-  let id = hm.swarm.id.toString('hex');
-  console.log(`My ID: ${id}`);
+//   let id = hm.swarm.id.toString('hex');
+//   console.log(`My ID: ${id}`);
 
-  // ugh hacky
-  HyperDoc.hm = hm;
-  let main = document.getElementById('main');
-  render(<App hm={hm} id={id} colors={colors} />, main);
-});
+//   // ugh hacky
+//   HyperDoc.hm = hm;
+
+//   let main = document.getElementById('main');
+//   render(<App hm={hm} id={id} colors={colors} />, main);
+// });
+
+let main = document.getElementById('main');
+render(<RichEditor />, main);
