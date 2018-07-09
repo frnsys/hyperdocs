@@ -2,29 +2,6 @@ import crypto from 'crypto';
 import Automerge from 'automerge';
 import EventEmitter from 'events';
 
-function DUMMY(changeDoc) {
-  let id = crypto.randomBytes(32).toString('hex');
-  changeDoc.text.insertAt(0, ...['a', 'b', 'c', 'd', 'e', 'f']);
-  changeDoc.comments[id] = {
-    id: id,
-    start: 0,
-    end: 5,
-    resolved: false,
-    thread: [{
-      id: crypto.randomBytes(32).toString('hex'),
-      created: Date.now(),
-      author: 'Francis',
-      body: 'This is a test comment'
-    }, {
-      id: crypto.randomBytes(32).toString('hex'),
-      created: Date.now(),
-      author: 'Frank',
-      body: 'This is my response'
-    }]
-  };
-}
-
-
 
 class HyperDoc extends EventEmitter {
   constructor(doc) {
@@ -70,9 +47,6 @@ class HyperDoc extends EventEmitter {
           changeDoc.title = 'Untitled';
           changeDoc.peers = {};
           changeDoc.comments = {};
-
-          // TODO TESTING
-          DUMMY(changeDoc);
         }
       });
 
@@ -190,8 +164,12 @@ class HyperDoc extends EventEmitter {
     });
   }
 
-  addComment(peerId, threadId, body, start, end) {
+  addComment(peerId, threadId, body) {
     if (!body) return;
+    if (!threadId) {
+      threadId = crypto.randomBytes(32).toString('hex');
+    }
+
     this._changeDoc((changeDoc) => {
       // TODO ideally this uses persistent id or sth
       let name = changeDoc.peers[peerId].name;
@@ -202,19 +180,18 @@ class HyperDoc extends EventEmitter {
         author: name,
         body: body
       };
-      if (threadId) {
+
+      if (threadId in changeDoc.comments) {
         changeDoc.comments[threadId].thread.push(comment);
       } else {
-        threadId = crypto.randomBytes(32).toString('hex');
         changeDoc.comments[threadId] = {
           id: threadId,
-          start: start,
-          end: end,
           resolved: false,
           thread: [comment]
         };
       }
     });
+    return threadId;
   }
 
   resolveComment(threadId) {

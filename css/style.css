@@ -240,3 +240,8 @@ textarea {
   text-align: center;
   margin: 1em 0;
 }
+
+.doc-rich-editor {
+  background: #fff;
+  padding: 1em;
+}

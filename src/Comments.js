@@ -1,4 +1,4 @@
-import Highlight from './Highlight';
+import { State } from './Editor/Comments';
 import React, {Component} from 'react';
 
 const Comment = (props) => {
@@ -38,7 +38,7 @@ class AddComment extends Component {
   }
 }
 
-class Comments extends Component {
+class Thread extends Component {
   render() {
     // TODO styling/positioning needs a lot of work
     let style = {
@@ -58,6 +58,31 @@ class Comments extends Component {
         {this.props.thread.map((c) => <Comment key={c.id} comment={c} />)}
         <AddComment addComment={(body) => this.props.add(this.props.id, body)} />
       </div>);
+  }
+}
+
+class Comments extends Component {
+  render() {
+    // TODO need to get proper {top} values
+    let { state, comment, addComment, resolveComment } = this.props;
+    if (comment) {
+      let { id, thread, resolved } = comment;
+      if (resolved) return '';
+      return <Thread
+        id={id}
+        top={0}
+        focused={true}
+        add={(id, body) => addComment(this.props.id, id, body)}
+        resolve={() => resolveComment(id)}
+        thread={thread} />
+
+    } else if (state === 'new') {
+      return <Thread top={0} focused={true} thread={[]} add={(_, body) => {
+        if (body) addComment(this.props.id, null, body);
+      }} />;
+    } else {
+      return '';
+    }
   }
 }
 
