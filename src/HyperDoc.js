@@ -1,6 +1,22 @@
 import crypto from 'crypto';
-import Automerge from 'automerge';
 import EventEmitter from 'events';
+import { Value } from 'slate';
+
+const initialValue = {
+  document: {
+    nodes: [{
+      object: 'block',
+      type: 'paragraph',
+      nodes: [{
+        object: 'text',
+        leaves: [{
+          text: '',
+        }],
+      }],
+    }]
+  }
+};
+
 
 
 class HyperDoc extends EventEmitter {
@@ -42,8 +58,8 @@ class HyperDoc extends EventEmitter {
   static listenForDoc(hyd) {
     this.hm.once('document:ready', (docId, doc, prevDoc) => {
       doc = this.hm.change(doc, (changeDoc) => {
-        if (!changeDoc.text) {
-          changeDoc.text = new Automerge.Text();
+        if (!changeDoc.value) {
+          changeDoc.value = initialValue;
           changeDoc.title = 'Untitled';
           changeDoc.peers = {};
           changeDoc.comments = {};
@@ -57,6 +73,7 @@ class HyperDoc extends EventEmitter {
 
   _setDoc(doc) {
     this.doc = doc;
+    this._value = Value.fromJSON(doc.value);
     this.id = this.hm.getId(doc);
     this.ready = true;
   }
@@ -69,8 +86,8 @@ class HyperDoc extends EventEmitter {
     return Object.keys(this.doc.peers).length;
   }
 
-  get text() {
-    return this.doc.text.join('');
+  get value() {
+    return this._value;
   }
 
   get title() {
@@ -94,19 +111,10 @@ class HyperDoc extends EventEmitter {
 
   _onUpdate(docId, doc, prevDoc) {
     if (this.id == docId) {
-      let diff = Automerge.diff(prevDoc, doc);
-      this.lastDiffs = diff.filter((d) => d.type === 'text');
       this.doc = doc;
+      this._value = Value.fromJSON(doc.value);
       this.emit('updated', this);
     }
-  }
-
-  setSelection(peerId, caretPos, caretIdx) {
-    // update peers about caret position
-    this._changeDoc((changeDoc) => {
-      changeDoc.peers[peerId].pos = caretPos;
-      changeDoc.peers[peerId].idx = caretIdx;
-    });
   }
 
   setName(peerId, name) {
@@ -115,36 +123,10 @@ class HyperDoc extends EventEmitter {
     });
   }
 
-  editText(edits) {
+  updateValue(value) {
     this._changeDoc((changeDoc) => {
-      edits.forEach((e) => {
-        if (e.inserted) {
-          changeDoc.text.insertAt(e.caret, ...e.changed);
-        } else {
-          for (let i=0; i<e.diff; i++) {
-            changeDoc.text.deleteAt(e.caret);
-          }
-        }
-
-        // update comment positions as well
-        Object.values(changeDoc.comments).forEach((c) => {
-          if (e.caret < c.start + 1) {
-            if (e.inserted) {
-              c.start++;
-            } else {
-              c.start--;
-            }
-          }
-
-          if (e.caret < c.end) {
-            if (e.inserted) {
-              c.end++;
-            } else {
-              c.end--;
-            }
-          }
-        });
-      });
+      changeDoc.value = value.toJSON();
+      this._value = value;
     });
   }
 

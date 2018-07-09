@@ -1,4 +1,3 @@
-import { Value } from 'slate';
 import { Editor } from 'slate-react';
 import React, {Component} from 'react';
 import Comments from './Comments';
@@ -6,21 +5,6 @@ import CommentsPlugin from './Editor/Comments';
 import StylesPlugin from './Editor/Styles';
 import PeersPlugin from './Editor/Peers';
 
-
-const initialValue = Value.fromJSON({
-  document: {
-    nodes: [{
-      object: 'block',
-      type: 'paragraph',
-      nodes: [{
-        object: 'text',
-        leaves: [{
-          text: '',
-        }],
-      }],
-    }]
-  }
-});
 
 
 class Doqument extends Component {
@@ -36,7 +20,6 @@ class Doqument extends Component {
       })
     ];
     this.state = {
-      value: initialValue,
       comment: {
         state: 'none',
         focused: null
@@ -44,9 +27,10 @@ class Doqument extends Component {
     };
   }
 
-  onChange = (change) => {
-    let value = change.value;
-    this.setState({ value });
+  onChange = ({ value }) => {
+    if (value.document != this.props.doc.value.document || value.selection != this.props.doc.value.selection) {
+      this.props.doc.updateValue(value);
+    }
   }
 
   onCommentChange = (state, threadId) => {
@@ -59,7 +43,7 @@ class Doqument extends Component {
     threadId = this.props.doc.addComment(peerId, threadId, body);
 
     // highlight in document
-    let change = this.state.value.change().wrapInline({
+    let change = this.props.doc.value.change().wrapInline({
       data: { threadId: threadId },
       type: 'comment'
     });
@@ -71,7 +55,7 @@ class Doqument extends Component {
     this.props.doc.resolveComment(threadId);
 
     // highlight in document
-    let change = this.state.value.change().unwrapInline('comment');
+    let change = this.props.doc.value.change().unwrapInline('comment');
     this.onChange(change);
   }
 
@@ -90,7 +74,7 @@ class Doqument extends Component {
         autoCorrect={false}
         className='doc-rich-editor'
         plugins={this.plugins}
-        value={this.state.value}
+        value={this.props.doc.value}
         onChange={this.onChange} />
     </div>;
   }
