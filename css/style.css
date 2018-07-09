@@ -43,7 +43,7 @@ input[type=text] {
 }
 
 .doc-editor {
-  /* position: relative; */
+  position: relative;
   margin: 1em 0;
 }
 

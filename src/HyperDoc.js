@@ -79,7 +79,6 @@ class HyperDoc extends EventEmitter {
     this.doc = doc;
     this.lastOp = 0;
     this.lastHash = '';
-    // this._applyOps(doc.ops);
     this.id = this.hm.getId(doc);
     this.ready = true;
   }
@@ -111,10 +110,10 @@ class HyperDoc extends EventEmitter {
     this.emit('updated', this);
   }
 
-  _applyOps(ops) {
+  _applyOps(ops, reset) {
     if (ops.length > 0) {
       console.log('---');
-      this.applyUpdates(ops.map(Operation.fromJSON));
+      this.applyUpdates(ops.map(Operation.fromJSON), reset);
       ops.forEach((op) => {
         console.log(`op id: ${op.id}`);
         console.log(`prev hash: "${this.lastHash}"`);
@@ -122,14 +121,6 @@ class HyperDoc extends EventEmitter {
         console.log(`new hash: "${this.lastHash}"`);
         this.lastOp++;
       });
-      console.log(`doc hash: ${doc.hash}`);
-      // if this is false, then this document has diverged
-      // from the canonical sequence of operations
-      // either re-apply ops from the very start
-      // (will lose selection)
-      // or rollback to some known snapshot?
-      // (would still lose selection afaik)
-      console.log(this.lastHash == doc.hash);
       console.log('---');
     }
   }
@@ -140,6 +131,18 @@ class HyperDoc extends EventEmitter {
 
       let ops = doc.ops.slice(this.lastOp);
       this._applyOps(ops);
+
+      // if this is false, then this document has diverged
+      // from the canonical sequence of operations
+      // either re-apply ops from the very start
+      // (will lose selection)
+      // or rollback to some known snapshot?
+      // (would still lose selection afaik)
+      if (this.lastHash != doc.hash) {
+        console.log('DIVERGED, replaying');
+        this._applyOps(this.doc.ops, true);
+        console.log(this.lastHash == doc.hash);
+      }
 
       this.emit('updated', this);
     }
@@ -162,7 +165,7 @@ class HyperDoc extends EventEmitter {
     ops = ops.filter((o) => {
       return o.type != 'set_selection' && o.type != 'set_value'
     }).toJSON().map((o) => {
-      o.id = crypto.randomBytes(8).toString('hex')
+      o.id = crypto.randomBytes(2).toString('hex')
       if (o.properties && o.properties.type === undefined) {
         o.properties.type = null;
       }
@@ -170,6 +173,12 @@ class HyperDoc extends EventEmitter {
     });
 
     if (ops.length > 0) {
+      // perhaps before adding changes,
+      // we need to check that this is using the latest version
+      // by comparing the last hash?
+      if (this.doc.hash !== this.lastHash) {
+        console.log('THIS DOC HAS DIVERGED, NOT SUBMITTING CHANGES');
+      }
       this._changeDoc((changeDoc) => {
         ops.forEach((op) => {
           console.log(`op id: ${op.id}`);

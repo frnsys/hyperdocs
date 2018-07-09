@@ -44,14 +44,21 @@ class Doqument extends Component {
     props.doc.applyUpdates = this.applyUpdates;
   }
 
+  componentDidMount() {
+    this.props.doc._applyOps(this.props.doc.doc.ops);
+  }
+
   onChange = (change) => {
     let { value } = change;
     this.setState({ value });
     this.props.doc.addChanges(change.operations);
   }
 
-  applyUpdates = (ops) => {
+  applyUpdates = (ops, reset) => {
     let { value } = this.state;
+    if (reset) {
+      value = initialValue;
+    }
     ops.forEach((op) => {
       value = Operations.apply(value, op);
     });
