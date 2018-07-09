@@ -1,8 +1,12 @@
 import crypto from 'crypto';
 import EventEmitter from 'events';
-import { Value } from 'slate';
+import { Value, Operation, Operations } from 'slate';
 
-const initialValue = {
+function hash(str) {
+  return crypto.createHash('md5').update(str).digest('hex');
+}
+
+const initialValue = Value.fromJSON({
   document: {
     nodes: [{
       object: 'block',
@@ -15,8 +19,7 @@ const initialValue = {
       }],
     }]
   }
-};
-
+});
 
 
 class HyperDoc extends EventEmitter {
@@ -58,11 +61,12 @@ class HyperDoc extends EventEmitter {
   static listenForDoc(hyd) {
     this.hm.once('document:ready', (docId, doc, prevDoc) => {
       doc = this.hm.change(doc, (changeDoc) => {
-        if (!changeDoc.value) {
-          changeDoc.value = initialValue;
+        if (!changeDoc.ops) {
+          changeDoc.ops = [];
           changeDoc.title = 'Untitled';
           changeDoc.peers = {};
           changeDoc.comments = {};
+          changeDoc.hash = '';
         }
       });
 
@@ -73,7 +77,9 @@ class HyperDoc extends EventEmitter {
 
   _setDoc(doc) {
     this.doc = doc;
-    this._value = Value.fromJSON(doc.value);
+    this.lastOp = 0;
+    this.lastHash = '';
+    this._applyOps(doc.ops);
     this.id = this.hm.getId(doc);
     this.ready = true;
   }
@@ -84,10 +90,6 @@ class HyperDoc extends EventEmitter {
 
   get nPeers() {
     return Object.keys(this.doc.peers).length;
-  }
-
-  get value() {
-    return this._value;
   }
 
   get title() {
@@ -109,12 +111,45 @@ class HyperDoc extends EventEmitter {
     this.emit('updated', this);
   }
 
+  _applyOps(ops) {
+    if (ops.length > 0) {
+      console.log('---');
+      this.applyUpdates(ops.map(Operation.fromJSON));
+      ops.forEach((op) => {
+        console.log(`op id: ${op.id}`);
+        console.log(`prev hash: "${this.lastHash}"`);
+        this.lastHash = hash(`${this.lastHash}${op.id}`);
+        console.log(`new hash: "${this.lastHash}"`);
+        this.lastOp++;
+      });
+      console.log(`doc hash: ${doc.hash}`);
+      // if this is false, then this document has diverged
+      // from the canonical sequence of operations
+      // either re-apply ops from the very start
+      // (will lose selection)
+      // or rollback to some known snapshot?
+      // (would still lose selection afaik)
+      console.log(this.lastHash == doc.hash);
+      console.log('---');
+    }
+  }
+
   _onUpdate(docId, doc, prevDoc) {
     if (this.id == docId) {
       this.doc = doc;
-      this._value = Value.fromJSON(doc.value);
+
+      let ops = doc.ops.slice(this.lastOp);
+      this._applyOps(ops);
+
       this.emit('updated', this);
     }
+  }
+
+  setSelection(peerId, caretPos) {
+    // update peers about caret position
+    this._changeDoc((changeDoc) => {
+      changeDoc.peers[peerId].pos = caretPos;
+    });
   }
 
   setName(peerId, name) {
@@ -123,11 +158,30 @@ class HyperDoc extends EventEmitter {
     });
   }
 
-  updateValue(value) {
-    this._changeDoc((changeDoc) => {
-      changeDoc.value = value.toJSON();
-      this._value = value;
+  addChanges(ops) {
+    ops = ops.filter((o) => {
+      return o.type != 'set_selection' && o.type != 'set_value'
+    }).toJSON().map((o) => {
+      o.id = crypto.randomBytes(8).toString('hex')
+      if (o.properties && o.properties.type === undefined) {
+        o.properties.type = null;
+      }
+      return o;
     });
+
+    if (ops.length > 0) {
+      this._changeDoc((changeDoc) => {
+        ops.forEach((op) => {
+          console.log(`op id: ${op.id}`);
+          console.log(`prev hash: "${this.lastHash}"`);
+          this.lastHash = hash(`${this.lastHash}${op.id}`);
+          this.lastOp++;
+          console.log(`new hash: "${this.lastHash}"`);
+        });
+        changeDoc.ops.push(...ops);
+        changeDoc.hash = this.lastHash;
+      });
+    }
   }
 
   join(id, name, color) {

@@ -7,7 +7,18 @@ const localStyle = {
 
 // TODO do this per-peer
 const remoteStyle = {
+  position: 'relative',
   background: 'rgba(0,255,0,0.2)'
+};
+
+const cursorStyle = {
+  width: '2px',
+  background: 'rgba(0,255,0,0.6)',
+  height: '1em',
+  display: 'inline-block',
+  position: 'absolute',
+  top: '0px',
+  right: '-1px'
 };
 
 
@@ -21,7 +32,7 @@ function Peers(opts) {
 
   function onChange(change) {
     let { selection } = change.value;
-    if (selection == lastSelection) return;
+    if ((selection == lastSelection) || (selection.isCollapsed && (lastSelection && lastSelection.isCollapsed))) return;
     if (lastSelection) {
       change = change.removeMarkAtRange(lastSelection, localMark);
     }
@@ -44,7 +55,8 @@ function Peers(opts) {
   const renderMark = (props) => {
     let { mark } = props;
     if (mark.type === 'peer') {
-      let style = mark.data.get('peerId') == localId ? localStyle : remoteStyle;
+      let isMe = mark.data.get('peerId') == localId;
+      let style = isMe ? localStyle : remoteStyle;
       return <span style={style}>{props.children}</span>;
     }
   }

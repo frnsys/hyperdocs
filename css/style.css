@@ -43,7 +43,7 @@ input[type=text] {
 }
 
 .doc-editor {
-  position: relative;
+  /* position: relative; */
   margin: 1em 0;
 }
 
@@ -174,4 +174,11 @@ input[type=text] {
   background: #fff;
   padding: 1em;
   min-height: 50vh;
+}
+
+.peer-cursor {
+  position: fixed;
+  width: 2px;
+  background: blue;
+  height: 1em;
 }

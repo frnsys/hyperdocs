@@ -4,8 +4,22 @@ import Comments from './Comments';
 import CommentsPlugin from './Editor/Comments';
 import StylesPlugin from './Editor/Styles';
 import PeersPlugin from './Editor/Peers';
+import { Value, Operations } from 'slate';
 
-
+const initialValue = Value.fromJSON({
+  document: {
+    nodes: [{
+      object: 'block',
+      type: 'paragraph',
+      nodes: [{
+        object: 'text',
+        leaves: [{
+          text: '',
+        }],
+      }],
+    }]
+  }
+});
 
 class Doqument extends Component {
   constructor(props) {
@@ -20,17 +34,28 @@ class Doqument extends Component {
       })
     ];
     this.state = {
+      value: initialValue,
       comment: {
         state: 'none',
         focused: null
       }
     };
+    this.editor = React.createRef();
+    props.doc.applyUpdates = this.applyUpdates;
   }
 
-  onChange = ({ value }) => {
-    if (value.document != this.props.doc.value.document || value.selection != this.props.doc.value.selection) {
-      this.props.doc.updateValue(value);
-    }
+  onChange = (change) => {
+    let { value } = change;
+    this.setState({ value });
+    this.props.doc.addChanges(change.operations);
+  }
+
+  applyUpdates = (ops) => {
+    let { value } = this.state;
+    ops.forEach((op) => {
+      value = Operations.apply(value, op);
+    });
+    this.setState({ value });
   }
 
   onCommentChange = (state, threadId) => {
@@ -43,7 +68,7 @@ class Doqument extends Component {
     threadId = this.props.doc.addComment(peerId, threadId, body);
 
     // highlight in document
-    let change = this.props.doc.value.change().wrapInline({
+    let change = this.state.value.change().wrapInline({
       data: { threadId: threadId },
       type: 'comment'
     });
@@ -55,13 +80,19 @@ class Doqument extends Component {
     this.props.doc.resolveComment(threadId);
 
     // highlight in document
-    let change = this.props.doc.value.change().unwrapInline('comment');
+    let change = this.state.value.change().unwrapInline('comment');
     this.onChange(change);
   }
 
   render() {
     let { id, doc } = this.props;
-    return <div className='doc-editor'>
+    return <div className='doc-editor' ref={this.editor}>
+      {Object.values(this.props.doc.peers).map((p) => {
+        // TODO sync peer positions
+        if (!p.pos) return '';
+        let peerStyle = p.pos;
+        return <div key={p.id} style={peerStyle} className='peer-cursor'></div>
+      })}
       <Comments
         id={id}
         state={this.state.comment.state}
@@ -74,7 +105,8 @@ class Doqument extends Component {
         autoCorrect={false}
         className='doc-rich-editor'
         plugins={this.plugins}
-        value={this.props.doc.value}
+        value={this.state.value}
+        onSelect={this.onSelect}
         onChange={this.onChange} />
     </div>;
   }
