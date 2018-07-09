@@ -79,7 +79,7 @@ class HyperDoc extends EventEmitter {
     this.doc = doc;
     this.lastOp = 0;
     this.lastHash = '';
-    this._applyOps(doc.ops);
+    // this._applyOps(doc.ops);
     this.id = this.hm.getId(doc);
     this.ready = true;
   }
