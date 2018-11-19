@@ -1,90 +1,83 @@
-import Peer from './Peer';
-import Editor from './Editor';
-import Comments from './Comments';
-import Highlight from './Highlight';
+import { Editor } from 'slate-react';
 import React, {Component} from 'react';
+import Comments from './Comments';
+import CommentsPlugin from './Editor/Comments';
+import StylesPlugin from './Editor/Styles';
+import PeersPlugin from './Editor/Peers';
 
-function commentForCaret(comments, start, end) {
-  return comments.find((c) => c.start <= start && c.end >= end);
-}
 
-class Doc extends Component {
+
+class Doqument extends Component {
   constructor(props) {
     super(props);
+    this.plugins = [
+      StylesPlugin(),
+      PeersPlugin({
+        localId: props.id
+      }),
+      CommentsPlugin({
+        onChange: this.onCommentChange
+      })
+    ];
     this.state = {
-      scrollTop: 0,
-      focusedComment: null
+      comment: {
+        state: 'none',
+        focused: null
+      }
     };
-    this.editor = React.createRef();
   }
 
-  onScroll(scrollTop) {
-    this.setState({ scrollTop });
+  onChange = ({ value }) => {
+    if (value.document != this.props.doc.value.document || value.selection != this.props.doc.value.selection) {
+      this.props.doc.updateValue(value);
+    }
   }
 
-  onSelect(caretPos, caretIdx) {
-    // find focused comment, if any
-    let comments = Object.values(this.props.doc.comments);
-    let focusedComment = comments.find((c) => c.start <= caretIdx.start && c.end >= caretIdx.end);
+  onCommentChange = (state, threadId) => {
+    let comment = { state, focused: threadId };
+    this.setState({ comment });
+  }
 
-    this.setState({
-      caretPos: caretPos,
-      caretIdx: caretIdx,
-      addNewComment: !focusedComment && caretIdx.start != caretIdx.end,
-      focusedComment: focusedComment ? focusedComment.id : null
+  addComment = (peerId, threadId, body) => {
+    // add comment to hyperdoc
+    threadId = this.props.doc.addComment(peerId, threadId, body);
+
+    // highlight in document
+    let change = this.props.doc.value.change().wrapInline({
+      data: { threadId: threadId },
+      type: 'comment'
     });
+    this.onChange(change);
+  }
 
-    this.props.doc.setSelection(this.props.id, caretPos, caretIdx);
+  resolveComment = (threadId) => {
+    // resolve comment in hyperdoc
+    this.props.doc.resolveComment(threadId);
+
+    // highlight in document
+    let change = this.props.doc.value.change().unwrapInline('comment');
+    this.onChange(change);
   }
 
   render() {
-    let text = this.props.doc.text;
-    let peers = Object.values(this.props.doc.peers).filter((p) => p.id !== this.props.id && p.pos);
-    let activeComments = Object.values(this.props.doc.comments).filter((c) => !c.resolved);
-
-    let caretTop = this.state.caretPos ? this.state.caretPos.start.top : 0;
-    let addComment = <Comments top={caretTop} focused={true} thread={[]} add={(_, body) => {
-      if (body) {
-        let { start, end } = this.state.caretIdx;
-        this.props.doc.addComment(this.props.id, null, body, start, end);
-        this.editor.current.focus();
-      }
-    }} />;
-
-    return <div id='editor'>
-      <div className='doc-editor'>
-        <div className='doc-overlay' style={{top: -this.state.scrollTop}}>
-          {activeComments.map((c) => {
-            let focused = c.id === this.state.focusedComment;
-            return <Comments
-              key={c.id}
-              top={caretTop}
-              focused={focused}
-              doc={this.props.doc}
-              add={(id, body) => this.props.doc.addComment(this.props.id, id, body)}
-              resolve={() => this.props.doc.resolveComment(c.id)}
-              {...c} />
-          })}
-          {this.state.addNewComment && addComment}
-        </div>
-        <div className='doc-editor-constrained'>
-          <div className='doc-overlay' style={{position: 'absolute', top: -this.state.scrollTop}}>
-            {activeComments.map((c) => {
-              return <Highlight key={c.id} text={text} start={c.start} end={c.end} color='blue' />;
-            })}
-            {peers.map((p) => <Peer key={p.id} peer={p} text={text} />)}
-          </div>
-        <Editor
-          ref={this.editor}
-          text={this.props.doc.text}
-          diffs={this.props.doc.diffs}
-          onScroll={this.onScroll.bind(this)}
-          onSelect={this.onSelect.bind(this)}
-          onEdit={(edits) => this.props.doc.editText(edits)} />
-      </div>
-      </div>
+    let { id, doc } = this.props;
+    return <div className='doc-editor'>
+      <Comments
+        id={id}
+        state={this.state.comment.state}
+        comment={doc.comments[this.state.comment.focused]}
+        onChange={this.onChange}
+        addComment={this.addComment}
+        resolveComment={this.resolveComment} />
+      <Editor
+        autoFocus={true}
+        autoCorrect={false}
+        className='doc-rich-editor'
+        plugins={this.plugins}
+        value={this.props.doc.value}
+        onChange={this.onChange} />
     </div>;
   }
 }
 
-export default Doc;
+export default Doqument;

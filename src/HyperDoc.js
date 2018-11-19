@@ -1,28 +1,21 @@
 import crypto from 'crypto';
-import Automerge from 'automerge';
 import EventEmitter from 'events';
+import { Value } from 'slate';
 
-function DUMMY(changeDoc) {
-  let id = crypto.randomBytes(32).toString('hex');
-  changeDoc.text.insertAt(0, ...['a', 'b', 'c', 'd', 'e', 'f']);
-  changeDoc.comments[id] = {
-    id: id,
-    start: 0,
-    end: 5,
-    resolved: false,
-    thread: [{
-      id: crypto.randomBytes(32).toString('hex'),
-      created: Date.now(),
-      author: 'Francis',
-      body: 'This is a test comment'
-    }, {
-      id: crypto.randomBytes(32).toString('hex'),
-      created: Date.now(),
-      author: 'Frank',
-      body: 'This is my response'
+const initialValue = {
+  document: {
+    nodes: [{
+      object: 'block',
+      type: 'paragraph',
+      nodes: [{
+        object: 'text',
+        leaves: [{
+          text: '',
+        }],
+      }],
     }]
-  };
-}
+  }
+};
 
 
 
@@ -65,14 +58,11 @@ class HyperDoc extends EventEmitter {
   static listenForDoc(hyd) {
     this.hm.once('document:ready', (docId, doc, prevDoc) => {
       doc = this.hm.change(doc, (changeDoc) => {
-        if (!changeDoc.text) {
-          changeDoc.text = new Automerge.Text();
+        if (!changeDoc.value) {
+          changeDoc.value = initialValue;
           changeDoc.title = 'Untitled';
           changeDoc.peers = {};
           changeDoc.comments = {};
-
-          // TODO TESTING
-          DUMMY(changeDoc);
         }
       });
 
@@ -83,6 +73,7 @@ class HyperDoc extends EventEmitter {
 
   _setDoc(doc) {
     this.doc = doc;
+    this._value = Value.fromJSON(doc.value);
     this.id = this.hm.getId(doc);
     this.ready = true;
   }
@@ -95,8 +86,8 @@ class HyperDoc extends EventEmitter {
     return Object.keys(this.doc.peers).length;
   }
 
-  get text() {
-    return this.doc.text.join('');
+  get value() {
+    return this._value;
   }
 
   get title() {
@@ -120,19 +111,10 @@ class HyperDoc extends EventEmitter {
 
   _onUpdate(docId, doc, prevDoc) {
     if (this.id == docId) {
-      let diff = Automerge.diff(prevDoc, doc);
-      this.lastDiffs = diff.filter((d) => d.type === 'text');
       this.doc = doc;
+      this._value = Value.fromJSON(doc.value);
       this.emit('updated', this);
     }
-  }
-
-  setSelection(peerId, caretPos, caretIdx) {
-    // update peers about caret position
-    this._changeDoc((changeDoc) => {
-      changeDoc.peers[peerId].pos = caretPos;
-      changeDoc.peers[peerId].idx = caretIdx;
-    });
   }
 
   setName(peerId, name) {
@@ -141,36 +123,10 @@ class HyperDoc extends EventEmitter {
     });
   }
 
-  editText(edits) {
+  updateValue(value) {
     this._changeDoc((changeDoc) => {
-      edits.forEach((e) => {
-        if (e.inserted) {
-          changeDoc.text.insertAt(e.caret, ...e.changed);
-        } else {
-          for (let i=0; i<e.diff; i++) {
-            changeDoc.text.deleteAt(e.caret);
-          }
-        }
-
-        // update comment positions as well
-        Object.values(changeDoc.comments).forEach((c) => {
-          if (e.caret < c.start + 1) {
-            if (e.inserted) {
-              c.start++;
-            } else {
-              c.start--;
-            }
-          }
-
-          if (e.caret < c.end) {
-            if (e.inserted) {
-              c.end++;
-            } else {
-              c.end--;
-            }
-          }
-        });
-      });
+      changeDoc.value = value.toJSON();
+      this._value = value;
     });
   }
 
@@ -190,8 +146,12 @@ class HyperDoc extends EventEmitter {
     });
   }
 
-  addComment(peerId, threadId, body, start, end) {
+  addComment(peerId, threadId, body) {
     if (!body) return;
+    if (!threadId) {
+      threadId = crypto.randomBytes(32).toString('hex');
+    }
+
     this._changeDoc((changeDoc) => {
       // TODO ideally this uses persistent id or sth
       let name = changeDoc.peers[peerId].name;
@@ -202,19 +162,18 @@ class HyperDoc extends EventEmitter {
         author: name,
         body: body
       };
-      if (threadId) {
+
+      if (threadId in changeDoc.comments) {
         changeDoc.comments[threadId].thread.push(comment);
       } else {
-        threadId = crypto.randomBytes(32).toString('hex');
         changeDoc.comments[threadId] = {
           id: threadId,
-          start: start,
-          end: end,
           resolved: false,
           thread: [comment]
         };
       }
     });
+    return threadId;
   }
 
   resolveComment(threadId) {

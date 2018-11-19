@@ -5,6 +5,8 @@ import Hypermerge from 'hypermerge';
 import ram from 'random-access-memory';
 import {render} from 'react-dom';
 
+import Doqument from './Document';
+
 // const path = 'docs';
 const path = ram;
 
